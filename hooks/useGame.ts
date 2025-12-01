@@ -12,6 +12,7 @@ import {
   playMusic,
   fadeOutMusic,
   stopMusic,
+  resumeMusic,
   toggleMusic,
   getMusicMuted,
 } from "../utils/audio";
@@ -57,19 +58,18 @@ export default function useGame(
   }, [input]);
 
   // 🎵 Manage background music
-  useEffect(() => {
-    if (settings.muted) {
-      fadeOutMusic();
-      return;
-    }
+useEffect(() => {
+  if (settings.muted) {
+    fadeOutMusic();
+    return;
+  }
 
-    if (paused || gameOver) {
-      fadeOutMusic();
-    } else {
-      // Only resume if already playing
-      playMusic("theme", settings.volume);
-    }
-  }, [paused, gameOver, settings.muted, settings.volume]);
+  if (paused || gameOver) {
+    fadeOutMusic();
+  } else {
+    resumeMusic(settings.volume);
+  }
+}, [paused, gameOver, settings.muted, settings.volume]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

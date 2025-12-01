@@ -33,12 +33,6 @@ export default function GameCanvas() {
 
   // 🎵 Handle background music
   useEffect(() => {
-    if (!showWelcome && !musicStarted) {
-      queueMicrotask(() => setMusicStarted(true));
-    }
-  }, [showWelcome, musicStarted]);
-
-  useEffect(() => {
     if (musicStarted) {
       playMusic("theme", 0.4);
     }
@@ -123,7 +117,7 @@ export default function GameCanvas() {
             <button
               onClick={() => {
                 setShowWelcome(false);
-                playMusic("theme", 0.4);
+                 setMusicStarted(true);
               }}
               className="bg-green-600 px-6 py-3 rounded-lg text-white hover:bg-green-500 shadow-md z-10"
             >
