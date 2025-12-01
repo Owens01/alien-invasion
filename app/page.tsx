@@ -1,8 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import SettingsPanel from "../components/SettingsPanel";
+import useSettingsPanel from "../hooks/useSettingsPanel";
+import useGame from "../hooks/useGame";
 
 const GameCanvas: React.ComponentType<any> = dynamic(
   () => import("../components/GameCanvas"),
@@ -10,7 +12,9 @@ const GameCanvas: React.ComponentType<any> = dynamic(
 );
 
 export default function Home() {
-  const [showSettings, setShowSettings] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { state, actions } = useGame(canvasRef);
+  const { showSettings, closeSettings, toggleSettings } = useSettingsPanel();
 
   return (
     <main className="p-4 md:p-8">
@@ -19,16 +23,22 @@ export default function Home() {
         <div
           className={`transition-all duration-300 ${
             showSettings ? "-translate-x-64" : "translate-x-0"
-          } flex-shrink-0`}
+          } shrink-0`}
         >
-          <GameCanvas showSettings={showSettings} setShowSettings={setShowSettings} />
+          <GameCanvas
+            canvasRef={canvasRef}
+            showSettings={showSettings}
+            setShowSettings={toggleSettings}
+          />
         </div>
 
         {/* Settings panel slides in on the right */}
         {showSettings && (
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <SettingsPanel
-              onClose={() => setShowSettings(false)}
+              state={state}
+              actions={actions}
+              onClose={closeSettings}
             />
           </div>
         )}
