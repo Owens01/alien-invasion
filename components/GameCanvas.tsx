@@ -46,7 +46,7 @@ export default function GameCanvas() {
     return () => {
       stopMusic();
     };
-  }, [state.paused, state.gameOver, showWelcome]);
+  }, [state.paused, state.gameOver, showWelcome, musicStarted]);
 
   return (
     <div className="relative w-full h-[640px] rounded-xl overflow-hidden bg-black">
@@ -90,7 +90,7 @@ export default function GameCanvas() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-gradient-to-b from-gray-900 via-black to-gray-900 flex flex-col items-center justify-center text-center text-white"
+            className="absolute inset-0 bg-linear-to-b from-gray-900 via-black to-gray-900 flex flex-col items-center justify-center text-center text-white"
           >
             {/* Subtle moving stars background */}
             <div className="absolute inset-0 overflow-hidden">
