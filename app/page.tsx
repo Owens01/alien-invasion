@@ -6,7 +6,13 @@ import SettingsPanel from "../components/SettingsPanel";
 import useSettingsPanel from "../hooks/useSettingsPanel";
 import useGame from "../hooks/useGame";
 
-const GameCanvas: React.ComponentType<any> = dynamic(
+type GameCanvasProps = {
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  showSettings: boolean;
+  setShowSettings: () => void;
+};
+
+const GameCanvas = dynamic<GameCanvasProps>(
   () => import("../components/GameCanvas"),
   { ssr: false }
 );

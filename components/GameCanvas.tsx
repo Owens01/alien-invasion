@@ -4,22 +4,24 @@ import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import HUD from "./HUD";
-import SettingsPanel from "./SettingsPanel";
 import Controls from "./Controls";
 import PauseOverlay from "./PauseOverlay";
+import SettingsPanel from "./SettingsPanel";
 import useGame from "../hooks/useGame";
 import { playMusic, stopMusic, fadeOutMusic, resumeMusic } from "../utils/audio";
 
-export default function GameCanvas() {
+interface GameCanvasProps {
+  showSettings: boolean;
+  setShowSettings: (v: boolean) => void;
+}
+
+export default function GameCanvas({ showSettings, setShowSettings }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { state, actions } = useGame(canvasRef);
-  const [showSettings, setShowSettings] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
 
-  // // Center canvas initially, shift left when settings open
-  // const canvasShift = showSettings ? "translate-x-[-300px]" : "translate-x-0";
-
+  // 🎵 Music handling
   useEffect(() => {
     if (musicStarted) playMusic("theme", 0.4);
   }, [musicStarted]);
@@ -32,11 +34,14 @@ export default function GameCanvas() {
   }, [state.paused, state.gameOver, showWelcome]);
 
   return (
-    <div className="relative w-full h-[640px] rounded-xl overflow-hidden bg-black flex justify-center items-center">
-      
-      {/* Canvas container with shift animation */}
-      <motion.div>
-        <canvas ref={canvasRef} className="w-[640px] h-[640px] block" />
+    <div className="relative w-full h-[640px] flex justify-center items-center overflow-hidden">
+      {/* Canvas + HUD */}
+      <motion.div
+        className="relative"
+        animate={{ x: showSettings ? -320 : 0 }} // shift left when settings open
+        transition={{ type: "tween", duration: 0.3 }}
+      >
+        <canvas ref={canvasRef} className="w-[640px] h-[640px] bg-black rounded-xl block" />
         <HUD state={state} />
         <div className="absolute bottom-3 left-3">
           <Controls actions={actions} />
@@ -44,30 +49,22 @@ export default function GameCanvas() {
         {state.paused && <PauseOverlay onResume={() => actions.togglePause()} />}
       </motion.div>
 
-      {/* Right side panel: Pause + Settings */}
-      <div className="absolute top-5 right-5 flex flex-col gap-2">
-        <button
-          onClick={() => actions.togglePause()}
-          className="bg-slate-700 px-3 py-1 rounded-lg text-sm hover:bg-slate-600"
-        >
-          {state.paused ? "Resume" : "Pause"}
-        </button>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="bg-slate-700 px-3 py-1 rounded-lg text-sm hover:bg-slate-600"
-        >
-          Settings
-        </button>
-      </div>
-
       {/* Settings Panel */}
       <AnimatePresence>
         {showSettings && (
-          <SettingsPanel
-            state={state}
-            actions={actions}
-            onClose={() => setShowSettings(false)}
-          />
+          <motion.div
+            initial={{ x: 320, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 320, opacity: 0 }}
+            transition={{ type: "tween", duration: 0.3 }}
+            className="absolute right-0 top-0 h-full"
+          >
+            <SettingsPanel
+              state={state}
+              actions={actions}
+              onClose={() => setShowSettings(false)}
+            />
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -78,7 +75,7 @@ export default function GameCanvas() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-linear-to-b from-gray-900 via-black to-gray-900 flex flex-col items-center justify-center text-center text-white"
+            className="absolute inset-0 flex flex-col items-center justify-center text-center text-white bg-gradient-to-b from-gray-900 via-black to-gray-900"
           >
             <h1 className="text-5xl font-bold mb-6">🚀 Alien Invasion</h1>
             <p className="text-lg mb-6">Defend your base and survive the alien waves!</p>
@@ -86,7 +83,7 @@ export default function GameCanvas() {
               onClick={() => {
                 setShowWelcome(false);
                 setMusicStarted(true);
-                actions.restart(); // start game
+                actions.restart();
               }}
               className="bg-green-600 px-6 py-3 rounded-lg text-white hover:bg-green-500 shadow-md"
             >
