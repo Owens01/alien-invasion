@@ -47,10 +47,11 @@ export default function useGame(
   });
 
   const rafRef = useRef<number | null>(null);
-  const stateRef = useRef({ paused: false });
+  const stateRef = useRef({ paused: false, gameStarted: false });
   const input = useInput();
   const [paused, setPaused] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<boolean>(false);
+  const [gameStarted, setGameStarted] = useState<boolean>(false);
 
   const inputRef = useRef(input);
   useEffect(() => {
@@ -58,18 +59,18 @@ export default function useGame(
   }, [input]);
 
   // 🎵 Manage background music
-useEffect(() => {
-  if (settings.muted) {
-    fadeOutMusic();
-    return;
-  }
+  useEffect(() => {
+    if (settings.muted) {
+      fadeOutMusic();
+      return;
+    }
 
-  if (paused || gameOver) {
-    fadeOutMusic();
-  } else {
-    resumeMusic(settings.volume);
-  }
-}, [paused, gameOver, settings.muted, settings.volume]);
+    if (paused || gameOver) {
+      fadeOutMusic();
+    } else if (gameStarted) {
+      resumeMusic(settings.volume);
+    }
+  }, [paused, gameOver, gameStarted, settings.muted, settings.volume]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -140,13 +141,17 @@ useEffect(() => {
       }
     }
 
-    spawnWave(6 * stats.wave);
+    // Only spawn initial wave if game has started
+    if (stateRef.current.gameStarted) {
+      spawnWave(6 * stats.wave);
+    }
 
     const baseDescentSpeed = descentSpeed;
     let last = performance.now();
 
     function update(dt: number) {
-      if (stateRef.current.paused || gameOver) return;
+      // Don't update if game hasn't started
+      if (!stateRef.current.gameStarted || stateRef.current.paused || gameOver) return;
       if (!canvas) return;
 
       const currentInput = inputRef.current;
@@ -338,7 +343,7 @@ useEffect(() => {
       window.removeEventListener("keydown", onKey);
       stopMusic();
     };
-  }, [canvasRef, settings, stats.wave, gameOver, setStats]);
+  }, [canvasRef, settings, stats.wave, gameOver, gameStarted, setStats]);
 
   const actions = {
     setVolume: (v: number) => setSettings((s) => ({ ...s, volume: v })),
@@ -351,6 +356,11 @@ useEffect(() => {
       setPaused((p) => !p);
     },
 
+    startGame: () => {
+      stateRef.current.gameStarted = true;
+      setGameStarted(true);
+    },
+
     restart: () => {
       setStats({
         score: 0,
@@ -359,6 +369,8 @@ useEffect(() => {
         highScores: stats.highScores || [],
       });
       setGameOver(false);
+      stateRef.current.gameStarted = true;
+      setGameStarted(true);
       playMusic("theme", settings.volume);
     },
 
@@ -375,7 +387,7 @@ useEffect(() => {
   };
 
   return {
-    state: { ...settings, ...stats, paused, gameOver },
+    state: { ...settings, ...stats, paused, gameOver, gameStarted },
     actions,
   };
 }

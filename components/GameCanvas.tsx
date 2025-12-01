@@ -117,7 +117,8 @@ export default function GameCanvas() {
             <button
               onClick={() => {
                 setShowWelcome(false);
-                 setMusicStarted(true);
+                setMusicStarted(true);
+                actions.startGame(); // Start the game!
               }}
               className="bg-green-600 px-6 py-3 rounded-lg text-white hover:bg-green-500 shadow-md z-10"
             >
