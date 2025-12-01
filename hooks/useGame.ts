@@ -69,7 +69,7 @@ export default function useGame(
       // Only resume if already playing
       playMusic("theme", settings.volume);
     }
-  }, [paused, gameOver, settings.muted]);
+  }, [paused, gameOver, settings.muted, settings.volume]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
