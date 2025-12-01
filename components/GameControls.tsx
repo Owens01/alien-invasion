@@ -2,8 +2,8 @@
 
 "use client";
 
-import { useGameStore } from "../hooks/useGameStore"; // For paused, togglePause
-import { useSettingsStore } from "../hooks/useSettingsStore"; // For muted, toggleMute
+import { useGameStore } from "@/app/zustand-store/useGameStore"; // For paused, togglePause
+import { useSettingsStore } from "@/app/zustand-store/useSettingsStore"; // For muted, toggleMute
 
 export default function GameControls({
   onOpenSettings,
