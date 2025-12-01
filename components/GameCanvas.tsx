@@ -17,8 +17,8 @@ export default function GameCanvas() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
 
-  // Center canvas initially, shift left when settings open
-  const canvasShift = showSettings ? "translate-x-[-300px]" : "translate-x-0";
+  // // Center canvas initially, shift left when settings open
+  // const canvasShift = showSettings ? "translate-x-[-300px]" : "translate-x-0";
 
   useEffect(() => {
     if (musicStarted) playMusic("theme", 0.4);
@@ -35,9 +35,7 @@ export default function GameCanvas() {
     <div className="relative w-full h-[640px] rounded-xl overflow-hidden bg-black flex justify-center items-center">
       
       {/* Canvas container with shift animation */}
-      <motion.div
-        className={`relative transition-transform duration-300 ${canvasShift}`}
-      >
+      <motion.div>
         <canvas ref={canvasRef} className="w-[640px] h-[640px] block" />
         <HUD state={state} />
         <div className="absolute bottom-3 left-3">

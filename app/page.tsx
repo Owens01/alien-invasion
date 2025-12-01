@@ -1,40 +1,37 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React from "react";
+import React, { useState } from "react";
+import SettingsPanel from "../components/SettingsPanel";
 
-const GameCanvas: React.ComponentType = dynamic(
+const GameCanvas: React.ComponentType<any> = dynamic(
   () => import("../components/GameCanvas"),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 export default function Home() {
+  const [showSettings, setShowSettings] = useState(false);
+
   return (
     <main className="p-4 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-slate-800 rounded-2xl p-3 shadow-lg">
-          <GameCanvas />
+      <div className="flex gap-4">
+        {/* GameCanvas container */}
+        <div
+          className={`transition-all duration-300 ${
+            showSettings ? "-translate-x-64" : "translate-x-0"
+          } flex-shrink-0`}
+        >
+          <GameCanvas showSettings={showSettings} setShowSettings={setShowSettings} />
         </div>
-        <div className="space-y-4">
-          <div className="bg-slate-800 rounded-2xl p-4 shadow-lg">
-            <h2 className="font-semibold mb-2">Settings</h2>
-            <p className="text-sm text-slate-300">
-              Open settings in the canvas (press{" "}
-              <span className="font-mono">S</span> or use the Settings button).
-            </p>
+
+        {/* Settings panel slides in on the right */}
+        {showSettings && (
+          <div className="flex-shrink-0">
+            <SettingsPanel
+              onClose={() => setShowSettings(false)}
+            />
           </div>
-          <div className="bg-slate-800 rounded-2xl p-4 shadow-lg">
-            <h2 className="font-semibold">How to play</h2>
-            <ol className="list-decimal list-inside text-slate-300 text-sm">
-              <li>Move: Arrow keys or A/D</li>
-              <li>Shoot: Space</li>
-              <li>Pause: P or Escape</li>
-              <li>Settings: S</li>
-            </ol>
-          </div>
-        </div>
+        )}
       </div>
     </main>
   );
