@@ -13,7 +13,6 @@ const GameCanvas: React.ComponentType = dynamic(
 export default function Home() {
   return (
     <main className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold mb-4">Alien Invasion</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-slate-800 rounded-2xl p-3 shadow-lg">
           <GameCanvas />
