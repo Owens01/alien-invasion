@@ -4,88 +4,123 @@ import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import HUD from "./HUD";
+import SettingsPanel from "./SettingsPanel";
 import Controls from "./Controls";
 import PauseOverlay from "./PauseOverlay";
-import SettingsPanel from "./SettingsPanel";
 import useGame from "../hooks/useGame";
-import { playMusic, stopMusic, fadeOutMusic, resumeMusic } from "../utils/audio";
+import {
+  playMusic,
+  stopMusic,
+  fadeOutMusic,
+  resumeMusic,
+} from "../utils/audio";
 
-interface GameCanvasProps {
-  showSettings: boolean;
-  setShowSettings: (v: boolean) => void;
-}
-
-export default function GameCanvas({ showSettings, setShowSettings }: GameCanvasProps) {
+export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { state, actions } = useGame(canvasRef);
+  const [showSettings, setShowSettings] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [musicStarted, setMusicStarted] = useState(false);
 
-  // 🎵 Music handling
+  // Handle 'S' key to toggle settings
   useEffect(() => {
-    if (musicStarted) playMusic("theme", 0.4);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "s" || e.key === "S") setShowSettings((v) => !v);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // 🎵 Handle background music
+  useEffect(() => {
+    if (musicStarted) {
+      playMusic("theme", 0.4);
+    }
   }, [musicStarted]);
 
   useEffect(() => {
-    if (state.paused) fadeOutMusic();
-    else if (!showWelcome && !state.paused) resumeMusic();
+    if (state.paused) {
+      fadeOutMusic();
+    } else if (!showWelcome && !state.paused) {
+      resumeMusic();
+    }
+
     if (state.gameOver) fadeOutMusic();
+
     return () => stopMusic();
   }, [state.paused, state.gameOver, showWelcome]);
 
   return (
-    <div className="relative w-full h-[640px] flex justify-center items-center overflow-hidden">
-      {/* Canvas + HUD */}
-      <motion.div
-        className="relative"
-        animate={{ x: showSettings ? -320 : 0 }} // shift left when settings open
-        transition={{ type: "tween", duration: 0.3 }}
-      >
-        <canvas ref={canvasRef} className="w-[640px] h-[640px] bg-black rounded-xl block" />
-        <HUD state={state} />
-        <div className="absolute bottom-3 left-3">
-          <Controls actions={actions} />
-        </div>
-        {state.paused && <PauseOverlay onResume={() => actions.togglePause()} />}
-      </motion.div>
+    <div className="relative w-full h-[640px] rounded-xl overflow-hidden bg-black">
+      <canvas ref={canvasRef} className="w-full h-full block" />
 
-      {/* Settings Panel */}
-      <AnimatePresence>
-        {showSettings && (
-          <motion.div
-            initial={{ x: 320, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 320, opacity: 0 }}
-            transition={{ type: "tween", duration: 0.3 }}
-            className="absolute right-0 top-0 h-full"
-          >
-            <SettingsPanel
-              state={state}
-              actions={actions}
-              onClose={() => setShowSettings(false)}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <HUD state={state} />
 
-      {/* Welcome Screen */}
+      <div className="absolute top-3 right-3 flex gap-2">
+        <button
+          onClick={() => actions.togglePause()}
+          className="bg-slate-700 px-3 py-1 rounded-lg text-sm hover:bg-slate-600"
+        >
+          {state.paused ? "Resume" : "Pause"}
+        </button>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="bg-slate-700 px-3 py-1 rounded-lg text-sm hover:bg-slate-600"
+        >
+          Settings
+        </button>
+      </div>
+
+      <div className="absolute bottom-3 left-3">
+        <Controls actions={actions} />
+      </div>
+
+      {state.paused && <PauseOverlay onResume={() => actions.togglePause()} />}
+
+      {showSettings && (
+        <SettingsPanel
+          state={state}
+          actions={actions}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {/* 🌟 Welcome Screen */}
       <AnimatePresence>
         {showWelcome && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 flex flex-col items-center justify-center text-center text-white bg-gradient-to-b from-gray-900 via-black to-gray-900"
+            className="absolute inset-0 bg-linear-to-b from-gray-900 via-black to-gray-900 flex flex-col items-center justify-center text-center text-white"
           >
-            <h1 className="text-5xl font-bold mb-6">🚀 Alien Invasion</h1>
-            <p className="text-lg mb-6">Defend your base and survive the alien waves!</p>
+            {/* Subtle moving stars background */}
+            <div className="absolute inset-0 overflow-hidden">
+              <motion.div
+                animate={{ backgroundPositionY: ["0%", "100%"] }}
+                transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+                className="absolute inset-0 bg-[url('/stars-bg.png')] opacity-40"
+              ></motion.div>
+            </div>
+
+            <motion.h1
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.7 }}
+              className="text-5xl font-bold mb-6 drop-shadow-lg z-10"
+            >
+              🚀 Alien Invasion
+            </motion.h1>
+            <p className="text-lg mb-6 z-10">
+              Defend your base and survive the alien waves!
+            </p>
             <button
               onClick={() => {
                 setShowWelcome(false);
                 setMusicStarted(true);
-                actions.restart();
+                actions.startGame(); // Start the game!
               }}
-              className="bg-green-600 px-6 py-3 rounded-lg text-white hover:bg-green-500 shadow-md"
+              className="bg-green-600 px-6 py-3 rounded-lg text-white hover:bg-green-500 shadow-md z-10"
             >
               Start Game
             </button>
@@ -93,23 +128,32 @@ export default function GameCanvas({ showSettings, setShowSettings }: GameCanvas
         )}
       </AnimatePresence>
 
-      {/* Game Over Screen */}
+      {/* 💀 Game Over Screen */}
       <AnimatePresence>
         {state.gameOver && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center text-white"
           >
-            <h2 className="text-3xl font-bold mb-4">Game Over</h2>
-            <p className="text-lg mb-4">Your Score: {state.score}</p>
-            <button
-              onClick={() => actions.restart()}
-              className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
+            <motion.h2
+              initial={{ y: -20 }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-3xl font-bold mb-4"
             >
-              Restart
-            </button>
+              Game Over
+            </motion.h2>
+            <p className="text-lg mb-4">Your Score: {state.score}</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => actions.restart()}
+                className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-500"
+              >
+                Restart
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

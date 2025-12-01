@@ -1,53 +1,40 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useRef } from "react";
-import SettingsPanel from "../components/SettingsPanel";
-import useSettingsPanel from "../hooks/useSettingsPanel";
-import useGame from "../hooks/useGame";
+import React from "react";
 
-type GameCanvasProps = {
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  showSettings: boolean;
-  setShowSettings: () => void;
-};
-
-const GameCanvas = dynamic<GameCanvasProps>(
+const GameCanvas: React.ComponentType = dynamic(
   () => import("../components/GameCanvas"),
-  { ssr: false }
+  {
+    ssr: false,
+  }
 );
 
 export default function Home() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { state, actions } = useGame(canvasRef);
-  const { showSettings, closeSettings, toggleSettings } = useSettingsPanel();
-
   return (
     <main className="p-4 md:p-8">
-      <div className="flex gap-4">
-        {/* GameCanvas container */}
-        <div
-          className={`transition-all duration-300 ${
-            showSettings ? "-translate-x-64" : "translate-x-0"
-          } shrink-0`}
-        >
-          <GameCanvas
-            canvasRef={canvasRef}
-            showSettings={showSettings}
-            setShowSettings={toggleSettings}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-slate-800 rounded-2xl p-3 shadow-lg">
+          <GameCanvas />
         </div>
-
-        {/* Settings panel slides in on the right */}
-        {showSettings && (
-          <div className="shrink-0">
-            <SettingsPanel
-              state={state}
-              actions={actions}
-              onClose={closeSettings}
-            />
+        <div className="space-y-4">
+          <div className="bg-slate-800 rounded-2xl p-4 shadow-lg">
+            <h2 className="font-semibold mb-2">Settings</h2>
+            <p className="text-sm text-slate-300">
+              Open settings in the canvas (press{" "}
+              <span className="font-mono">S</span> or use the Settings button).
+            </p>
           </div>
-        )}
+          <div className="bg-slate-800 rounded-2xl p-4 shadow-lg">
+            <h2 className="font-semibold">How to play</h2>
+            <ol className="list-decimal list-inside text-slate-300 text-sm">
+              <li>Move: Arrow keys or A/D</li>
+              <li>Shoot: Space</li>
+              <li>Pause: P or Escape</li>
+              <li>Settings: S</li>
+            </ol>
+          </div>
+        </div>
       </div>
     </main>
   );
