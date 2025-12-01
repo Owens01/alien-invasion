@@ -2,12 +2,11 @@
 
 import dynamic from "next/dynamic";
 import React, { useRef, useState, useEffect } from "react";
-import { useGameStore } from "../hooks/useGameStore"; // New Zustand Store Import
-import GameControls from "../components/GameControls"; // New Controls Component Import
-import SettingsPanel from "../components/SettingsPanel"; // Settings Panel is still managed here
+import { useGameStore } from "../hooks/useGameStore";
+import GameControls from "../components/GameControls";
+import SettingsPanel from "../components/SettingsPanel";
 
-// We no longer need to pass state/actions to GameCanvas dynamically, 
-// but we still need the canvasRef for the game loop
+// GameCanvas component structure remains the same
 interface GameCanvasProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }
@@ -23,52 +22,39 @@ export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
-  // Use the Zustand action to start the game loop when the component mounts
+  // Select the necessary action from the Zustand store
   const runGameLoop = useGameStore(state => state.runGameLoop);
-  const startGame = useGameStore(state => state.startGame);
-  
-  // Start the game loop on mount and stop it on unmount
+  const stopGameLoop = useGameStore(state => state.stopGameLoop);
+
+  // Mount/Unmount the game loop
   useEffect(() => {
-    // Run the loop function from the store, passing the canvasRef
+    // Pass the canvas reference to the store to start the loop
     const cleanup = runGameLoop(canvasRef);
     
-    // We must ensure the game starts (e.g., to handle the first key press/click)
-    startGame(); 
-    
-    return () => {
-      // The store handles most cleanup, but return the function just in case
-      // stopGameLoop() is another option if defined in the store.
-      if (cleanup) cleanup();
-    };
-  }, [runGameLoop, startGame]);
-
+    // The cleanup function returned by runGameLoop handles stopping the RAF and listeners
+    return cleanup;
+  }, [runGameLoop]);
 
   return (
     <main className="p-4 md:p-8">
-      {/* Container Grid: 1 column on small screens, 3 columns on large screens */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
         
-        {/* LEFT/CENTER (2/3 width on desktop): Game Canvas Area */}
+        {/* LEFT/CENTER: Game Canvas Area */}
         <div className="lg:col-span-2 bg-slate-800 rounded-2xl p-3 shadow-2xl border border-slate-700">
-          {/* GameCanvas is now simpler, only needs the Ref */}
           <GameCanvas 
             canvasRef={canvasRef} 
           />
         </div>
         
-        {/* RIGHT (1/3 width on desktop): Control Panel */}
+        {/* RIGHT: Control Panel */}
         <div className="space-y-4">
-          {/* Use the new Controls Component */}
           <GameControls onOpenSettings={() => setShowSettings(true)} />
         </div>
       </div>
       
-      {/* Settings Modal (It will pull state/actions directly from useGameStore) */}
+      {/* Settings Modal (It pulls state/actions internally) */}
       {showSettings && (
         <SettingsPanel
-          // SettingsPanel now pulls state/actions internally, 
-          // or is modified to pull them as we planned in the previous step (passing state/actions)
-          // For simplicity, we'll assume SettingsPanel is now modified to use useGameStore internally
           onClose={() => setShowSettings(false)}
         />
       )}

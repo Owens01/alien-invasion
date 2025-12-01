@@ -2,11 +2,11 @@
 
 import { create } from "zustand"; // New import for Zustand
 import { RefObject } from "react"; // Only RefObject is needed now
-import useInput from "../"; // Keeping external dependency
-import usePersistentState from "./usePersistentState";
-import config from "../data/config";
-import { clamp } from "../utils/clamp";
-import { detectCollisions } from "../utils/collisions";
+import useInput from "../../hooks/useInput"; // Keeping external dependency
+import usePersistentState from "../../hooks/usePersistentState"; // For local storage persistence
+import config from "../../data/config";
+import { clamp } from "../../utils/clamp";
+import { detectCollisions } from "../../utils/collisions";
 import {
   playSound,
   playMusic,
@@ -14,7 +14,20 @@ import {
   resumeMusic,
   toggleMusic,
   getMusicMuted,
-} from "../utils/audio";
+} from "../../utils/audio";
+
+// --- GAME OBJECT TYPES (Moved from original file) ---
+type Player = { x: number; y: number; w: number; h: number; speed: number };
+type Bullet = { x: number; y: number; w: number; h: number; vy: number };
+type Enemy = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  vx: number;
+  shootTimer: number;
+};
+type Particle = { x: number; y: number; vx: number; vy: number; life: number };
 
 // --- TYPES (Exported for use in other files) ---
 type Settings = {
