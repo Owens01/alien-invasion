@@ -34,19 +34,27 @@ export default function GameCanvas() {
   // 🎵 Handle background music
   useEffect(() => {
     if (!showWelcome && !musicStarted) {
-      playMusic("theme", 0.4); // fade in when game starts
-      setMusicStarted(true);
+      queueMicrotask(() => setMusicStarted(true));
     }
+  }, [showWelcome, musicStarted]);
 
-    if (state.paused) fadeOutMusic();
-    else if (!showWelcome && !state.paused) resumeMusic();
+  useEffect(() => {
+    if (musicStarted) {
+      playMusic("theme", 0.4);
+    }
+  }, [musicStarted]);
+
+  useEffect(() => {
+    if (state.paused) {
+      fadeOutMusic();
+    } else if (!showWelcome && !state.paused) {
+      resumeMusic();
+    }
 
     if (state.gameOver) fadeOutMusic();
 
-    return () => {
-      stopMusic();
-    };
-  }, [state.paused, state.gameOver, showWelcome, musicStarted]);
+    return () => stopMusic();
+  }, [state.paused, state.gameOver, showWelcome]);
 
   return (
     <div className="relative w-full h-[640px] rounded-xl overflow-hidden bg-black">
@@ -150,7 +158,6 @@ export default function GameCanvas() {
               >
                 Restart
               </button>
-             
             </div>
           </motion.div>
         )}
