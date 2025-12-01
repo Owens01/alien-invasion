@@ -20,6 +20,7 @@ export default function GameCanvas() {
   const { state, actions } = useGame(canvasRef);
   const [showSettings, setShowSettings] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [musicStarted, setMusicStarted] = useState(false);
 
   // Handle 'S' key to toggle settings
   useEffect(() => {
@@ -31,6 +32,17 @@ export default function GameCanvas() {
   }, []);
 
   // 🎵 Handle background music
+  useEffect(() => {
+    if (!showWelcome && !musicStarted) {
+      queueMicrotask(() => setMusicStarted(true));
+    }
+  }, [showWelcome, musicStarted]);
+
+  useEffect(() => {
+    if (musicStarted) {
+      playMusic("theme", 0.4);
+    }
+  }, [musicStarted]);
 
   useEffect(() => {
     if (state.paused) {

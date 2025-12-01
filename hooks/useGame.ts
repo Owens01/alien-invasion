@@ -66,13 +66,10 @@ export default function useGame(
     if (paused || gameOver) {
       fadeOutMusic();
     } else {
+      // Only resume if already playing
       playMusic("theme", settings.volume);
     }
-
-    return () => {
-      stopMusic();
-    };
-  }, [paused, gameOver, settings.muted, settings.volume]);
+  }, [paused, gameOver, settings.muted]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
