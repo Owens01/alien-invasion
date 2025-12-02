@@ -18,8 +18,7 @@ export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const currentInput = useInput();
   const currentInputRef = useRef(currentInput);
-  currentInputRef.current = currentInput; // update ref each render
-
+  
   const {
     paused,
     gameOver,
@@ -56,13 +55,14 @@ export default function GameCanvas() {
   // --- Start the game loop (once) ---
   useEffect(() => {
     if (!canvasRef.current) return;
+    currentInputRef.current = currentInput;
     const cleanup = runGameLoop(canvasRef, currentInputRef.current);
     return () => {
       cleanup();
       stopGameLoop();
     };
     // intentionally no currentInput dependency to prevent infinite loop
-  }, [runGameLoop, stopGameLoop]);
+  }, [runGameLoop, stopGameLoop, currentInput]);
 
   // --- Handle music and pause/resume logic ---
   useEffect(() => {
