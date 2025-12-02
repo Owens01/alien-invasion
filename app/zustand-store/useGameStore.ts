@@ -1,398 +1,398 @@
-// hooks/useGameStore.ts (Core)
-import { create } from "zustand";
-import { RefObject } from "react";
-import config from "../../data/config";
-import { clamp } from "../../utils/clamp";
-import { detectCollisions } from "../../utils/collisions";
-import { playSound, playMusic, fadeOutMusic, resumeMusic, stopMusic } from "../../utils/audio";
+// // hooks/useGameStore.ts (Core)
+// import { create } from "zustand";
+// import { RefObject } from "react";
+// import config from "../../data/config";
+// import { clamp } from "../../utils/clamp";
+// import { detectCollisions } from "../../utils/collisions";
+// import { playSound, playMusic, fadeOutMusic, resumeMusic, stopMusic } from "../../utils/audio";
 
-// --- Import required types ---
-import { InputState } from "@/types/types";
-// Use the stores directly for global state access, but be careful with setters
-import { useSettingsStore } from "./useSettingsStore";
-import { useStatsStore } from "./useStatsStore";
+// // --- Import required types ---
+// import { InputState } from "@/types/types";
+// // Use the stores directly for global state access, but be careful with setters
+// import { useSettingsStore } from "./useSettingsStore";
+// import { useStatsStore } from "./useStatsStore";
 
-// --- GAME OBJECT TYPES (Keep Local) ---
-type Player = { x: number; y: number; w: number; h: number; speed: number };
-type Bullet = { x: number; y: number; w: number; h: number; vy: number };
-type Enemy = { x: number; y: number; w: number; h: number; vx: number; shootTimer: number; };
-type Particle = { x: number; y: number; vx: number; vy: number; life: number };
+// // --- GAME OBJECT TYPES (Keep Local) ---
+// type Player = { x: number; y: number; w: number; h: number; speed: number };
+// type Bullet = { x: number; y: number; w: number; h: number; vy: number };
+// type Enemy = { x: number; y: number; w: number; h: number; vx: number; shootTimer: number; };
+// type Particle = { x: number; y: number; vx: number; vy: number; life: number };
 
-// --- CORE GAME STATE ---
-export interface GameState {
-    paused: boolean;
-    gameOver: boolean;
-    gameStarted: boolean;
-    // We will store the current input state REF here to allow the game loop access
-    // This removes the need to pass it into runGameLoop's signature.
-    inputRef: RefObject<InputState | null>; 
-}
+// // --- CORE GAME STATE ---
+// export interface GameState {
+//     paused: boolean;
+//     gameOver: boolean;
+//     gameStarted: boolean;
+//     // We will store the current input state REF here to allow the game loop access
+//     // This removes the need to pass it into runGameLoop's signature.
+//     inputRef: RefObject<InputState | null>; 
+// }
 
-export interface GameActions {
-    togglePause: () => void;
-    startGame: () => void;
-    restart: () => void;
-    // Updated signature: takes only the canvas ref now.
-    runGameLoop: (canvasRef: RefObject<HTMLCanvasElement | null>) => () => void; 
-    stopGameLoop: () => void;
-    // Action to set the input Ref from the component
-    setInputRef: (ref: RefObject<InputState | null>) => void;
-}
+// export interface GameActions {
+//     togglePause: () => void;
+//     startGame: () => void;
+//     restart: () => void;
+//     // Updated signature: takes only the canvas ref now.
+//     runGameLoop: (canvasRef: RefObject<HTMLCanvasElement | null>) => () => void; 
+//     stopGameLoop: () => void;
+//     // Action to set the input Ref from the component
+//     setInputRef: (ref: RefObject<InputState | null>) => void;
+// }
 
-export type GameStore = GameState & GameActions;
+// export type GameStore = GameState & GameActions;
 
-// --- INTERNAL GAME LOOP VARIABLES ---
-let rafRef: number | null = null;
+// // --- INTERNAL GAME LOOP VARIABLES ---
+// let rafRef: number | null = null;
 
-// --- INITIAL STATE FOR SSR STABILITY ---
-const INITIAL_STATE: GameState = {
-    paused: true,
-    gameOver: false,
-    gameStarted: false,
-    inputRef: { current: null },
-};
+// // --- INITIAL STATE FOR SSR STABILITY ---
+// const INITIAL_STATE: GameState = {
+//     paused: true,
+//     gameOver: false,
+//     gameStarted: false,
+//     inputRef: { current: null },
+// };
 
 
-export const useGameStore = create<GameStore>((set, get) => ({
-    ...INITIAL_STATE,
+// export const useGameStore = create<GameStore>((set, get) => ({
+//     ...INITIAL_STATE,
 
-    // --- ACTIONS ---
-    setInputRef: (ref) => set({ inputRef: ref }),
+//     // --- ACTIONS ---
+//     setInputRef: (ref) => set({ inputRef: ref }),
 
-    togglePause: () => {
-        set((state) => {
-            const newPaused = !state.paused;
-            const { muted, volume } = useSettingsStore.getState(); 
+//     togglePause: () => {
+//         set((state) => {
+//             const newPaused = !state.paused;
+//             const { muted, volume } = useSettingsStore.getState(); 
 
-            if (newPaused) {
-                fadeOutMusic();
-            } else if (state.gameStarted && !muted) {
-                resumeMusic(volume);
-            }
-            return { paused: newPaused };
-        });
-    },
+//             if (newPaused) {
+//                 fadeOutMusic();
+//             } else if (state.gameStarted && !muted) {
+//                 resumeMusic(volume);
+//             }
+//             return { paused: newPaused };
+//         });
+//     },
 
-    startGame: () => {
-        if (!get().gameStarted) {
-            set({ gameStarted: true, paused: false });
-            const { muted, volume } = useSettingsStore.getState();
-            if (!muted) playMusic("theme", volume);
-        }
-    },
+//     startGame: () => {
+//         if (!get().gameStarted) {
+//             set({ gameStarted: true, paused: false });
+//             const { muted, volume } = useSettingsStore.getState();
+//             if (!muted) playMusic("theme", volume);
+//         }
+//     },
 
-    restart: () => {
-        const { highScores } = useStatsStore.getState();
-        useStatsStore.getState().resetStats(highScores); 
+//     restart: () => {
+//         const { highScores } = useStatsStore.getState();
+//         useStatsStore.getState().resetStats(highScores); 
 
-        set({
-            gameOver: false,
-            paused: false,
-            gameStarted: true,
-        });
-        const { muted, volume } = useSettingsStore.getState();
-        if (!muted) playMusic("theme", volume);
-    },
+//         set({
+//             gameOver: false,
+//             paused: false,
+//             gameStarted: true,
+//         });
+//         const { muted, volume } = useSettingsStore.getState();
+//         if (!muted) playMusic("theme", volume);
+//     },
 
-    // --- GAME LOOP ---
-    // Note: This function is now stable as long as the store itself is stable
-    // We removed 'currentInput' from the signature and use the ref stored in the store.
-    runGameLoop: (canvasRef: RefObject<HTMLCanvasElement | null>) => { 
+//     // --- GAME LOOP ---
+//     // Note: This function is now stable as long as the store itself is stable
+//     // We removed 'currentInput' from the signature and use the ref stored in the store.
+//     runGameLoop: (canvasRef: RefObject<HTMLCanvasElement | null>) => { 
         
-        // --- Local store getters ---
-        const getSettings = () => useSettingsStore.getState();
-        const getStats = () => useStatsStore.getState();
-        // ** FIX: Get the update functions individually to avoid unnecessary scope capture **
-        const { decrementLives, updateScore, incrementWave, lives: statsLives } = useStatsStore.getState(); 
-        // We now get the current input ref from the store state
-        const currentInputRef = get().inputRef; 
+//         // --- Local store getters ---
+//         const getSettings = () => useSettingsStore.getState();
+//         const getStats = () => useStatsStore.getState();
+//         // ** FIX: Get the update functions individually to avoid unnecessary scope capture **
+//         const { decrementLives, updateScore, incrementWave, lives: statsLives } = useStatsStore.getState(); 
+//         // We now get the current input ref from the store state
+//         const currentInputRef = get().inputRef; 
         
-        const canvas = canvasRef.current;
-        if (!canvas) return stopMusic;
+//         const canvas = canvasRef.current;
+//         if (!canvas) return stopMusic;
 
-        // Set up the canvas dimensions correctly (assuming a 4:3 aspect ratio target)
-        canvas.width = 800;
-        canvas.height = 600;
+//         // Set up the canvas dimensions correctly (assuming a 4:3 aspect ratio target)
+//         canvas.width = 800;
+//         canvas.height = 600;
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return stopMusic; 
+//         const ctx = canvas.getContext("2d");
+//         if (!ctx) return stopMusic; 
         
-        // --- Initial game objects ---
-        const player: Player = { x: 240, y: 540, w: 48, h: 20, speed: config.playerSpeed };
-        const bullets: Bullet[] = [];
-        const enemies: Enemy[] = []; 
-        const enemyBullets: Bullet[] = [];
-        const particles: Particle[] = [];
-        let last = performance.now();
-        let difficultyMultiplier = 1;
-        let descentSpeed = 6;
-        let baseDescentSpeed = descentSpeed; 
+//         // --- Initial game objects ---
+//         const player: Player = { x: 240, y: 540, w: 48, h: 20, speed: config.playerSpeed };
+//         const bullets: Bullet[] = [];
+//         const enemies: Enemy[] = []; 
+//         const enemyBullets: Bullet[] = [];
+//         const particles: Particle[] = [];
+//         let last = performance.now();
+//         let difficultyMultiplier = 1;
+//         let descentSpeed = 6;
+//         let baseDescentSpeed = descentSpeed; 
 
-        // --- Helper Functions ---
-        function rand(min: number, max: number) { 
-            return min + Math.random() * (max - min); 
-        }
+//         // --- Helper Functions ---
+//         function rand(min: number, max: number) { 
+//             return min + Math.random() * (max - min); 
+//         }
         
-        function spawnWave(n = 6) {
-            const stats = getStats();
-            // Reset and scale descent speed based on wave progression
-            descentSpeed = baseDescentSpeed * (1 + stats.wave * 0.05);
+//         function spawnWave(n = 6) {
+//             const stats = getStats();
+//             // Reset and scale descent speed based on wave progression
+//             descentSpeed = baseDescentSpeed * (1 + stats.wave * 0.05);
             
-            for (let i = 0; i < n; i++) {
-              enemies.push({
-                x: 40 + i * 70, 
-                y: 40, 
-                w: 36, 
-                h: 28,
-                vx: (30 + Math.random() * 40) * (Math.random() < 0.5 ? 1 : -1),
-                shootTimer: rand(1.0, 4.0) / difficultyMultiplier,
-              });
-            }
-        }
+//             for (let i = 0; i < n; i++) {
+//               enemies.push({
+//                 x: 40 + i * 70, 
+//                 y: 40, 
+//                 w: 36, 
+//                 h: 28,
+//                 vx: (30 + Math.random() * 40) * (Math.random() < 0.5 ? 1 : -1),
+//                 shootTimer: rand(1.0, 4.0) / difficultyMultiplier,
+//               });
+//             }
+//         }
         
-        // --- Initial setup ---
-        const initialStats = getStats();
+//         // --- Initial setup ---
+//         const initialStats = getStats();
         
-        // Set difficulty based on current settings
-        switch (getSettings().difficulty) {
-            case "easy": 
-              difficultyMultiplier = 0.8; 
-              descentSpeed = 4; 
-              baseDescentSpeed = 4; 
-              break;
-            case "normal": 
-              difficultyMultiplier = 1; 
-              descentSpeed = 6; 
-              baseDescentSpeed = 6; 
-              break;
-            case "hard": 
-              difficultyMultiplier = 1.4; 
-              descentSpeed = 10; 
-              baseDescentSpeed = 10; 
-              break;
-        }
+//         // Set difficulty based on current settings
+//         switch (getSettings().difficulty) {
+//             case "easy": 
+//               difficultyMultiplier = 0.8; 
+//               descentSpeed = 4; 
+//               baseDescentSpeed = 4; 
+//               break;
+//             case "normal": 
+//               difficultyMultiplier = 1; 
+//               descentSpeed = 6; 
+//               baseDescentSpeed = 6; 
+//               break;
+//             case "hard": 
+//               difficultyMultiplier = 1.4; 
+//               descentSpeed = 10; 
+//               baseDescentSpeed = 10; 
+//               break;
+//         }
         
-        spawnWave(6 * initialStats.wave);
+//         spawnWave(6 * initialStats.wave);
 
-        // --- UPDATE FUNCTION ---
-        function update(dt: number) {
-            const coreState = get();
-            const settings = getSettings();
-            const stats = getStats();
-            const currentInput = currentInputRef.current; // Get the latest input from the Ref
+//         // --- UPDATE FUNCTION ---
+//         function update(dt: number) {
+//             const coreState = get();
+//             const settings = getSettings();
+//             const stats = getStats();
+//             const currentInput = currentInputRef.current; // Get the latest input from the Ref
             
-            if (!coreState.gameStarted || coreState.paused || coreState.gameOver) return;
-            if (!canvas || !currentInput) return;
+//             if (!coreState.gameStarted || coreState.paused || coreState.gameOver) return;
+//             if (!canvas || !currentInput) return;
 
-            // --- Player Movement & Boundary Clamping ---
-            if (currentInput.left) player.x -= player.speed * dt;
-            if (currentInput.right) player.x += player.speed * dt;
-            player.x = clamp(player.x, 0, canvas.width - player.w);
+//             // --- Player Movement & Boundary Clamping ---
+//             if (currentInput.left) player.x -= player.speed * dt;
+//             if (currentInput.right) player.x += player.speed * dt;
+//             player.x = clamp(player.x, 0, canvas.width - player.w);
 
-            // --- Player Shooting ---
-            if (currentInput.shoot && bullets.length < config.maxBullets) {
-                bullets.push({ 
-                  x: player.x + player.w / 2 - 3, 
-                  y: player.y - 10, 
-                  vy: -500, 
-                  w: 6, 
-                  h: 10 
-                });
-                if (!settings.muted) playSound("shoot", settings.volume);
-            }
+//             // --- Player Shooting ---
+//             if (currentInput.shoot && bullets.length < config.maxBullets) {
+//                 bullets.push({ 
+//                   x: player.x + player.w / 2 - 3, 
+//                   y: player.y - 10, 
+//                   vy: -500, 
+//                   w: 6, 
+//                   h: 10 
+//                 });
+//                 if (!settings.muted) playSound("shoot", settings.volume);
+//             }
 
-            // --- Update Player Bullets ---
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                bullets[i].y += bullets[i].vy * dt;
-                if (bullets[i].y + bullets[i].h < 0) {
-                    bullets.splice(i, 1);
-                }
-            }
+//             // --- Update Player Bullets ---
+//             for (let i = bullets.length - 1; i >= 0; i--) {
+//                 bullets[i].y += bullets[i].vy * dt;
+//                 if (bullets[i].y + bullets[i].h < 0) {
+//                     bullets.splice(i, 1);
+//                 }
+//             }
 
-            // --- Update Enemy Bullets ---
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                enemyBullets[i].y += enemyBullets[i].vy * dt;
-                if (enemyBullets[i].y > canvas.height) {
-                    enemyBullets.splice(i, 1);
-                }
-            }
+//             // --- Update Enemy Bullets ---
+//             for (let i = enemyBullets.length - 1; i >= 0; i--) {
+//                 enemyBullets[i].y += enemyBullets[i].vy * dt;
+//                 if (enemyBullets[i].y > canvas.height) {
+//                     enemyBullets.splice(i, 1);
+//                 }
+//             }
 
-            // --- Update Enemies ---
-            for (let ei = enemies.length - 1; ei >= 0; ei--) {
-                const e = enemies[ei];
+//             // --- Update Enemies ---
+//             for (let ei = enemies.length - 1; ei >= 0; ei--) {
+//                 const e = enemies[ei];
                 
-                // Move enemy horizontally
-                e.x += e.vx * dt;
+//                 // Move enemy horizontally
+//                 e.x += e.vx * dt;
                 
-                // Bounce at boundaries and descend
-                if (e.x <= 0 || e.x + e.w >= canvas.width) {
-                    e.vx = -e.vx;
-                    e.x = clamp(e.x, 0, canvas.width - e.w);
-                    e.y += descentSpeed;
-                }
+//                 // Bounce at boundaries and descend
+//                 if (e.x <= 0 || e.x + e.w >= canvas.width) {
+//                     e.vx = -e.vx;
+//                     e.x = clamp(e.x, 0, canvas.width - e.w);
+//                     e.y += descentSpeed;
+//                 }
 
-                // Enemy shooting logic
-                e.shootTimer -= dt;
-                if (e.shootTimer <= 0) {
-                    enemyBullets.push({ 
-                      x: e.x + e.w / 2 - 3, 
-                      y: e.y + e.h, 
-                      vy: 200, 
-                      w: 6, 
-                      h: 10 
-                    });
-                    e.shootTimer = rand(2.0, 5.0) / difficultyMultiplier;
-                    if (!settings.muted) playSound("shoot", settings.volume);
-                }
+//                 // Enemy shooting logic
+//                 e.shootTimer -= dt;
+//                 if (e.shootTimer <= 0) {
+//                     enemyBullets.push({ 
+//                       x: e.x + e.w / 2 - 3, 
+//                       y: e.y + e.h, 
+//                       vy: 200, 
+//                       w: 6, 
+//                       h: 10 
+//                     });
+//                     e.shootTimer = rand(2.0, 5.0) / difficultyMultiplier;
+//                     if (!settings.muted) playSound("shoot", settings.volume);
+//                 }
 
-                // Check if enemy reached player level (Game Over condition)
-                if (e.y + e.h >= player.y) {
-                    enemies.splice(ei, 1);
-                    if (!settings.muted) playSound("explode", settings.volume);
+//                 // Check if enemy reached player level (Game Over condition)
+//                 if (e.y + e.h >= player.y) {
+//                     enemies.splice(ei, 1);
+//                     if (!settings.muted) playSound("explode", settings.volume);
                     
-                    // ** FIX 1: Calling the stable decrement function **
-                    decrementLives(); 
+//                     // ** FIX 1: Calling the stable decrement function **
+//                     decrementLives(); 
                     
-                    if (stats.lives - 1 <= 0) {
-                      set({ gameOver: true }); 
-                      fadeOutMusic();
-                    }
-                }
-            }
+//                     if (stats.lives - 1 <= 0) {
+//                       set({ gameOver: true }); 
+//                       fadeOutMusic();
+//                     }
+//                 }
+//             }
 
-            // --- Update Particles ---
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.x += p.vx * dt;
-                p.y += p.vy * dt;
-                p.life -= dt;
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
+//             // --- Update Particles ---
+//             for (let i = particles.length - 1; i >= 0; i--) {
+//                 const p = particles[i];
+//                 p.x += p.vx * dt;
+//                 p.y += p.vy * dt;
+//                 p.life -= dt;
+//                 if (p.life <= 0) {
+//                     particles.splice(i, 1);
+//                 }
+//             }
             
-            // --- Collision: Enemy Bullet vs Player ---
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                if (detectCollisions(enemyBullets[i], player)) {
-                    enemyBullets.splice(i, 1);
-                    if (!settings.muted) playSound("explode", settings.volume);
+//             // --- Collision: Enemy Bullet vs Player ---
+//             for (let i = enemyBullets.length - 1; i >= 0; i--) {
+//                 if (detectCollisions(enemyBullets[i], player)) {
+//                     enemyBullets.splice(i, 1);
+//                     if (!settings.muted) playSound("explode", settings.volume);
                     
-                    // ** FIX 2: Calling the stable decrement function **
-                    decrementLives(); 
+//                     // ** FIX 2: Calling the stable decrement function **
+//                     decrementLives(); 
                     
-                    if (stats.lives - 1 <= 0) {
-                      set({ gameOver: true }); 
-                      fadeOutMusic();
-                    }
-                }
-            }
+//                     if (stats.lives - 1 <= 0) {
+//                       set({ gameOver: true }); 
+//                       fadeOutMusic();
+//                     }
+//                 }
+//             }
             
-            // --- Collision: Player Bullet vs Enemy ---
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    if (detectCollisions(bullets[i], enemies[j])) {
+//             // --- Collision: Player Bullet vs Enemy ---
+//             for (let i = bullets.length - 1; i >= 0; i--) {
+//                 for (let j = enemies.length - 1; j >= 0; j--) {
+//                     if (detectCollisions(bullets[i], enemies[j])) {
                         
-                        // Create particle explosion
-                        if (settings.particles) {
-                            const ex = enemies[j].x + enemies[j].w / 2;
-                            const ey = enemies[j].y + enemies[j].h / 2;
-                            for (let p = 0; p < 8; p++) {
-                                particles.push({
-                                    x: ex,
-                                    y: ey,
-                                    vx: rand(-100, 100),
-                                    vy: rand(-100, 100),
-                                    life: rand(0.3, 0.8)
-                                });
-                            }
-                        }
+//                         // Create particle explosion
+//                         if (settings.particles) {
+//                             const ex = enemies[j].x + enemies[j].w / 2;
+//                             const ey = enemies[j].y + enemies[j].h / 2;
+//                             for (let p = 0; p < 8; p++) {
+//                                 particles.push({
+//                                     x: ex,
+//                                     y: ey,
+//                                     vx: rand(-100, 100),
+//                                     vy: rand(-100, 100),
+//                                     life: rand(0.3, 0.8)
+//                                 });
+//                             }
+//                         }
                         
-                        bullets.splice(i, 1);
-                        enemies.splice(j, 1);
+//                         bullets.splice(i, 1);
+//                         enemies.splice(j, 1);
                         
-                        // ** FIX 3: Calling the stable update score function **
-                        updateScore(10);
+//                         // ** FIX 3: Calling the stable update score function **
+//                         updateScore(10);
                         
-                        if (!settings.muted) playSound("explode", settings.volume);
-                        break;
-                    }
-                }
-            }
+//                         if (!settings.muted) playSound("explode", settings.volume);
+//                         break;
+//                     }
+//                 }
+//             }
 
-            // --- Wave Completion Logic ---
-            if (enemies.length === 0 && !coreState.gameOver) {
-                incrementWave();
-                spawnWave(6 + stats.wave + 1);
-            }
-        }
+//             // --- Wave Completion Logic ---
+//             if (enemies.length === 0 && !coreState.gameOver) {
+//                 incrementWave();
+//                 spawnWave(6 + stats.wave + 1);
+//             }
+//         }
         
-        // --- DRAW FUNCTION ---
-        function draw() {
-            if (!ctx || !canvas) return;
+//         // --- DRAW FUNCTION ---
+//         function draw() {
+//             if (!ctx || !canvas) return;
             
-            // Clear canvas
-            ctx.fillStyle = "#000";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+//             // Clear canvas
+//             ctx.fillStyle = "#000";
+//             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw player (Simple triangle for a classic feel)
-            ctx.beginPath();
-            ctx.moveTo(player.x + player.w / 2, player.y);
-            ctx.lineTo(player.x, player.y + player.h);
-            ctx.lineTo(player.x + player.w, player.y + player.h);
-            ctx.closePath();
-            ctx.fillStyle = "#0f0";
-            ctx.fill();
+//             // Draw player (Simple triangle for a classic feel)
+//             ctx.beginPath();
+//             ctx.moveTo(player.x + player.w / 2, player.y);
+//             ctx.lineTo(player.x, player.y + player.h);
+//             ctx.lineTo(player.x + player.w, player.y + player.h);
+//             ctx.closePath();
+//             ctx.fillStyle = "#0f0";
+//             ctx.fill();
 
-            // Draw player bullets
-            ctx.fillStyle = "#0ff";
-            for (const b of bullets) {
-                ctx.fillRect(b.x, b.y, b.w, b.h);
-            }
+//             // Draw player bullets
+//             ctx.fillStyle = "#0ff";
+//             for (const b of bullets) {
+//                 ctx.fillRect(b.x, b.y, b.w, b.h);
+//             }
 
-            // Draw enemies (Simple rectangles for now)
-            ctx.fillStyle = "#f00";
-            for (const e of enemies) {
-                ctx.fillRect(e.x, e.y, e.w, e.h);
-            }
+//             // Draw enemies (Simple rectangles for now)
+//             ctx.fillStyle = "#f00";
+//             for (const e of enemies) {
+//                 ctx.fillRect(e.x, e.y, e.w, e.h);
+//             }
 
-            // Draw enemy bullets
-            ctx.fillStyle = "#f0f";
-            for (const b of enemyBullets) {
-                ctx.fillRect(b.x, b.y, b.w, b.h);
-            }
+//             // Draw enemy bullets
+//             ctx.fillStyle = "#f0f";
+//             for (const b of enemyBullets) {
+//                 ctx.fillRect(b.x, b.y, b.w, b.h);
+//             }
 
-            // Draw particles
-            ctx.fillStyle = "#ff6";
-            for (const p of particles) {
-                ctx.globalAlpha = p.life;
-                ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
-            }
-            ctx.globalAlpha = 1;
-        }
+//             // Draw particles
+//             ctx.fillStyle = "#ff6";
+//             for (const p of particles) {
+//                 ctx.globalAlpha = p.life;
+//                 ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+//             }
+//             ctx.globalAlpha = 1;
+//         }
 
-        // --- GAME LOOP ---
-        function loop(now = performance.now()) {
-            const dt = Math.min(0.05, (now - last) / 1000);
-            last = now;
-            update(dt);
-            draw();
-            rafRef = requestAnimationFrame(loop);
-        }
+//         // --- GAME LOOP ---
+//         function loop(now = performance.now()) {
+//             const dt = Math.min(0.05, (now - last) / 1000);
+//             last = now;
+//             update(dt);
+//             draw();
+//             rafRef = requestAnimationFrame(loop);
+//         }
         
-        // Start the game loop
-        rafRef = requestAnimationFrame(loop);
+//         // Start the game loop
+//         rafRef = requestAnimationFrame(loop);
 
-        // Cleanup function
-        return () => { 
-            if (rafRef) cancelAnimationFrame(rafRef);
-            rafRef = null;
-            stopMusic();
-        };
-    },
+//         // Cleanup function
+//         return () => { 
+//             if (rafRef) cancelAnimationFrame(rafRef);
+//             rafRef = null;
+//             stopMusic();
+//         };
+//     },
     
-    stopGameLoop: () => {
-        if (rafRef) cancelAnimationFrame(rafRef);
-        rafRef = null;
-        stopMusic();
-    }
-}));
+//     stopGameLoop: () => {
+//         if (rafRef) cancelAnimationFrame(rafRef);
+//         rafRef = null;
+//         stopMusic();
+//     }
+// }));
