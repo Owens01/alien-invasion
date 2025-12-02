@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import GameControls from "../components/GameControls";
 import SettingsPanel from "../components/SettingsPanel";
 import { useSettingsStore } from "@/app/zustand-store/useSettingsStore";
@@ -14,7 +14,7 @@ const GameCanvas = dynamic(() => import("../components/GameCanvas"), {
 export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
 
-  // SETTINGS STATE
+  // Memoized SETTINGS STATE
   const settingsState = useSettingsStore(state => ({
     volume: state.volume,
     difficulty: state.difficulty,
@@ -22,14 +22,14 @@ export default function Home() {
     muted: state.muted,
   }));
 
-  // SETTINGS ACTIONS
-  const settingsActions = useSettingsStore(state => ({
-    setVolume: state.setVolume,
-    setDifficulty: state.setDifficulty,
-    setParticles: state.setParticles,
-    toggleMute: state.toggleMute,
-    resetSettings: state.resetSettings,
-  }));
+  // Memoized SETTINGS ACTIONS
+  const settingsActions = useMemo(() => ({
+    setVolume: useSettingsStore.getState().setVolume,
+    setDifficulty: useSettingsStore.getState().setDifficulty,
+    setParticles: useSettingsStore.getState().setParticles,
+    toggleMute: useSettingsStore.getState().toggleMute,
+    resetSettings: useSettingsStore.getState().resetSettings,
+  }), []);
 
   return (
     <main className="p-4 md:p-8">
