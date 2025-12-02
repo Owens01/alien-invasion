@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import HUD from "./HUD";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
 
+// Using the updated stores
 import { useGameStore } from "@/app/zustand-store/useGameStore";
 import { useSettingsStore } from "@/app/zustand-store/useSettingsStore";
 import { useStatsStore } from "@/app/zustand-store/useStatsStore";
@@ -21,8 +22,10 @@ import {
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // This input state will be stable across re-renders for the Ref
   const currentInput = useInput();
-  const currentInputRef = useRef(currentInput);
+  const inputRef = useRef(currentInput);
 
   const {
     paused,
@@ -31,8 +34,9 @@ export default function GameCanvas() {
     togglePause,
     startGame,
     restart,
-    runGameLoop,
-    stopGameLoop,
+    runGameLoop: runGameLoopStore,
+    stopGameLoop: stopGameLoopStore,
+    setInputRef, // New setter for the input Ref
   } = useGameStore();
 
   const {
@@ -51,6 +55,26 @@ export default function GameCanvas() {
 
   const [showSettings, setShowSettings] = useState(false);
 
+  // FIX 1: Memoize the actions from the store to ensure stable references
+  // This is crucial for the useEffect dependency array
+  const runGameLoop = useCallback(
+    (canvasRef: React.RefObject<HTMLCanvasElement>) =>
+      runGameLoopStore(canvasRef),
+    [runGameLoopStore]
+  );
+
+  const stopGameLoop = useCallback(
+    () => stopGameLoopStore(),
+    [stopGameLoopStore]
+  );
+
+  // FIX 2: Keep the input ref updated and pass it to the store
+  // This runs on every input change, but does *not* trigger the game loop useEffect
+  useEffect(() => {
+    inputRef.current = currentInput;
+    setInputRef(inputRef); // Pass the ref object to the store
+  }, [currentInput, setInputRef]);
+
   // --- Handle key events ---
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -66,20 +90,21 @@ export default function GameCanvas() {
     if (!gameStarted) startGame();
   }, [gameStarted, startGame]);
 
-  // Keep ref updated without restarting the loop
-  useEffect(() => {
-    currentInputRef.current = currentInput;
-  }, [currentInput]);
-
   // --- Start the game loop (once) ---
+  // FIX 3: Removed currentInput dependency from the original file
+  // And changed dependencies to use stable memoized actions.
   useEffect(() => {
     if (!canvasRef.current) return;
-    const cleanup = runGameLoop(canvasRef, currentInputRef.current);
+
+    // runGameLoop now only depends on the stable canvasRef
+    // The game loop reads the input from the stable inputRef stored in Zustand
+    const cleanup = runGameLoop(canvasRef);
+
     return () => {
       cleanup();
       stopGameLoop();
     };
-    // intentionally no currentInput dependency to prevent infinite loop
+    // Dependencies are now stable memoized functions from the store
   }, [runGameLoop, stopGameLoop]);
 
   // --- Handle music and pause/resume logic ---
