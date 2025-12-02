@@ -7,7 +7,7 @@ import HUD from "./HUD";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
 
-// ✅ NEW: Import the three Zustand stores
+//  NEW: Import the three Zustand stores
 import { useGameStore } from "@/app/zustand-store/useGameStore";
 import { useSettingsStore } from "@/app/zustand-store/useSettingsStore";
 import { useStatsStore } from "@/app/zustand-store/useStatsStore";
@@ -23,10 +23,10 @@ import {
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
-  // ✅ NEW: Get input state for the game loop
+  //  NEW: Get input state for the game loop
   const currentInput = useInput();
   
-  // ✅ NEW: Access stores separately
+  //  NEW: Access stores separately
   const { paused, gameOver, gameStarted, togglePause, startGame, restart, runGameLoop, stopGameLoop } = useGameStore();
   const { muted, volume, difficulty, particles, toggleMute, setVolume, setDifficulty, setParticles, resetSettings } = useSettingsStore();
   const { score, lives, wave } = useStatsStore();
@@ -47,7 +47,7 @@ export default function GameCanvas() {
   useEffect(() => {
     // Try to play music on mount
     if (!muted) playMusic("theme", volume);
-  }, []);
+  }, [muted, volume]);
 
   useEffect(() => {
     if (paused) {
@@ -61,7 +61,7 @@ export default function GameCanvas() {
     return () => stopMusic();
   }, [paused, gameOver, gameStarted, muted, volume]);
 
-  // ✅ NEW: Start game loop with input state
+  //  NEW: Start game loop with input state
   useEffect(() => {
     if (!gameStarted) {
       startGame();
@@ -79,10 +79,10 @@ export default function GameCanvas() {
   return (
     <div className="flex w-full max-w-6xl mx-auto gap-6 p-4">
       {/* 🎮 Left Side: Game Canvas */}
-      <div className="relative flex-1 aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border-2 border-slate-700 shadow-2xl">
+      <div className="relative flex-1 aspect-4/3 rounded-xl overflow-hidden bg-slate-900 border-2 border-slate-700 shadow-2xl">
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        {/* ✅ FIXED: Pass only the stats that HUD expects */}
+        {/*  FIXED: Pass only the stats that HUD expects */}
         <HUD 
           state={{ 
             score, 
@@ -94,7 +94,7 @@ export default function GameCanvas() {
         {/* Paused Overlay */}
         {paused && <PauseOverlay onResume={togglePause} />}
 
-        {/* Settings Modal - ✅ FIXED: Pass state and actions */}
+        {/* Settings Modal -  FIXED: Pass state and actions */}
         {showSettings && (
           <SettingsPanel
             state={{
