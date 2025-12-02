@@ -82,21 +82,20 @@ export default function useGame(
     const dpr = window.devicePixelRatio || 1;
 
     function resize() {
-  if (!ctx || !canvas) return;
+      if (!ctx || !canvas) return;
 
-  // Fill the parent container exactly
-  const parent = canvas.parentElement;
-  if (!parent) return;
+      // Fill the parent container exactly
+      const parent = canvas.parentElement;
+      if (!parent) return;
 
-  const rect = parent.getBoundingClientRect(); // size of the parent
-  const dpr = window.devicePixelRatio || 1;
+      const rect = parent.getBoundingClientRect(); // size of the parent
+      const dpr = window.devicePixelRatio || 1;
 
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
     resize();
     window.addEventListener("resize", resize);
@@ -160,7 +159,8 @@ export default function useGame(
 
     function update(dt: number) {
       // Don't update if game hasn't started
-      if (!stateRef.current.gameStarted || stateRef.current.paused || gameOver) return;
+      if (!stateRef.current.gameStarted || stateRef.current.paused || gameOver)
+        return;
       if (!canvas) return;
 
       const currentInput = inputRef.current;
