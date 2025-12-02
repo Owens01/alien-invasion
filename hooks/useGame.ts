@@ -49,22 +49,21 @@ export default function useGame(
   const rafRef = useRef<number | null>(null);
   const stateRef = useRef({ paused: false, gameStarted: false });
   const input = useInput();
-  const [paused, setPaused] = useState<boolean>(false);
-  const [gameOver, setGameOver] = useState<boolean>(false);
-  const [gameStarted, setGameStarted] = useState<boolean>(false);
+  const [paused, setPaused] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
 
   const inputRef = useRef(input);
   useEffect(() => {
     inputRef.current = input;
   }, [input]);
 
-  // 🎵 Manage background music
+  // Background music
   useEffect(() => {
     if (settings.muted) {
       fadeOutMusic();
       return;
     }
-
     if (paused || gameOver) {
       fadeOutMusic();
     } else if (gameStarted) {
@@ -75,31 +74,26 @@ export default function useGame(
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     const dpr = window.devicePixelRatio || 1;
 
+    // --- Resize function to match parent exactly ---
     function resize() {
       if (!ctx || !canvas) return;
-
-      // Fill the parent container exactly
-      const parent = canvas.parentElement;
-      if (!parent) return;
-
-      const rect = parent.getBoundingClientRect(); // size of the parent
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (!rect) return;
       const dpr = window.devicePixelRatio || 1;
-
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    resize();
+    // Initial resize after next paint
+    requestAnimationFrame(resize);
     window.addEventListener("resize", resize);
 
+    // --- Game objects ---
     const player: Player = {
       x: 240,
       y: 540,
@@ -107,7 +101,6 @@ export default function useGame(
       h: 20,
       speed: config.playerSpeed,
     };
-
     const bullets: Bullet[] = [];
     const enemies: Enemy[] = [];
     const enemyBullets: Bullet[] = [];
@@ -116,7 +109,6 @@ export default function useGame(
     // Difficulty scaling
     let difficultyMultiplier = 1;
     let descentSpeed = 6;
-
     switch (settings.difficulty) {
       case "easy":
         difficultyMultiplier = 0.8;
@@ -135,7 +127,6 @@ export default function useGame(
     function rand(min: number, max: number) {
       return min + Math.random() * (max - min);
     }
-
     function spawnWave(n = 6) {
       for (let i = 0; i < n; i++) {
         enemies.push({
@@ -144,33 +135,30 @@ export default function useGame(
           w: 36,
           h: 28,
           vx: (30 + Math.random() * 40) * (Math.random() < 0.5 ? 1 : -1),
-          shootTimer: rand(1.0, 4.0) / difficultyMultiplier,
+          shootTimer: rand(1, 4) / difficultyMultiplier,
         });
       }
     }
 
-    // Only spawn initial wave if game has started
-    if (stateRef.current.gameStarted) {
-      spawnWave(6 * stats.wave);
-    }
+    if (stateRef.current.gameStarted) spawnWave(6 * stats.wave);
 
     const baseDescentSpeed = descentSpeed;
     let last = performance.now();
 
     function update(dt: number) {
-      // Don't update if game hasn't started
       if (!stateRef.current.gameStarted || stateRef.current.paused || gameOver)
         return;
-      if (!canvas) return;
 
       const currentInput = inputRef.current;
+      const width = canvas!.width / dpr;
+      const height = canvas!.height / dpr;
 
       // Player movement
       if (currentInput.left) player.x -= player.speed * dt;
       if (currentInput.right) player.x += player.speed * dt;
-      player.x = clamp(player.x, 0, canvas.width / dpr - player.w);
+      player.x = clamp(player.x, 0, width - player.w);
 
-      // Shooting (player)
+      // Player shooting
       if (currentInput.shoot && bullets.length < config.maxBullets) {
         bullets.push({
           x: player.x + player.w / 2 - 3,
@@ -188,22 +176,19 @@ export default function useGame(
         if (bullets[i].y < -20) bullets.splice(i, 1);
       }
 
-      // Enemies movement and shooting
+      // Enemy movement & shooting
       for (let ei = enemies.length - 1; ei >= 0; ei--) {
         const e = enemies[ei];
-
         e.x += e.vx * dt;
-
         if (e.x < 10) {
           e.x = 10;
           e.vx *= -1;
-        } else if (e.x > canvas.width / dpr - e.w - 10) {
-          e.x = canvas.width / dpr - e.w - 10;
+        } else if (e.x > width - e.w - 10) {
+          e.x = width - e.w - 10;
           e.vx *= -1;
         }
 
         e.y += baseDescentSpeed * dt;
-
         e.shootTimer -= dt;
         if (e.shootTimer <= 0) {
           enemyBullets.push({
@@ -214,7 +199,7 @@ export default function useGame(
             h: 10,
           });
           if (!settings.muted) playSound("shoot", settings.volume * 0.9);
-          e.shootTimer = rand(1.0, 3.5) / difficultyMultiplier;
+          e.shootTimer = rand(1, 3.5) / difficultyMultiplier;
         }
 
         if (e.y + e.h >= player.y) {
@@ -222,10 +207,7 @@ export default function useGame(
           if (!settings.muted) playSound("explode", settings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
-            if (newLives <= 0) {
-              setGameOver(true);
-              fadeOutMusic();
-            }
+            if (newLives <= 0) setGameOver(true);
             return { ...s, lives: newLives };
           });
         }
@@ -235,7 +217,7 @@ export default function useGame(
       for (let i = enemyBullets.length - 1; i >= 0; i--) {
         const b = enemyBullets[i];
         b.y += b.vy * dt;
-        if (b.y > canvas.height / dpr + 20) {
+        if (b.y > height + 20) {
           enemyBullets.splice(i, 1);
           continue;
         }
@@ -246,16 +228,12 @@ export default function useGame(
           w: player.w,
           h: player.h,
         };
-        const bulletRect = { x: b.x, y: b.y, w: b.w, h: b.h };
-        if (detectCollisions(bulletRect, playerRect)) {
+        if (detectCollisions(b, playerRect)) {
           enemyBullets.splice(i, 1);
           if (!settings.muted) playSound("explode", settings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
-            if (newLives <= 0) {
-              setGameOver(true);
-              fadeOutMusic();
-            }
+            if (newLives <= 0) setGameOver(true);
             return { ...s, lives: newLives };
           });
         }
@@ -337,13 +315,13 @@ export default function useGame(
 
     rafRef.current = requestAnimationFrame(loop);
 
+    // Pause key
     function onKey(e: KeyboardEvent) {
       if (["p", "P", "Escape"].includes(e.key)) {
         stateRef.current.paused = !stateRef.current.paused;
         setPaused((prev) => !prev);
       }
     }
-
     window.addEventListener("keydown", onKey);
 
     return () => {
@@ -364,12 +342,10 @@ export default function useGame(
       stateRef.current.paused = !stateRef.current.paused;
       setPaused((p) => !p);
     },
-
     startGame: () => {
       stateRef.current.gameStarted = true;
       setGameStarted(true);
     },
-
     restart: () => {
       setStats({
         score: 0,
@@ -382,7 +358,6 @@ export default function useGame(
       setGameStarted(true);
       playMusic("theme", settings.volume);
     },
-
     resetSettings: () =>
       setSettings({
         volume: 0.5,
@@ -390,7 +365,6 @@ export default function useGame(
         particles: true,
         muted: false,
       }),
-
     toggleMusic,
     getMusicMuted,
   };
