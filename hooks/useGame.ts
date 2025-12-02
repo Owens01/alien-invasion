@@ -82,12 +82,21 @@ export default function useGame(
     const dpr = window.devicePixelRatio || 1;
 
     function resize() {
-      if (!ctx || !canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
+  if (!ctx || !canvas) return;
+
+  // Fill the parent container exactly
+  const parent = canvas.parentElement;
+  if (!parent) return;
+
+  const rect = parent.getBoundingClientRect(); // size of the parent
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
 
     resize();
     window.addEventListener("resize", resize);
