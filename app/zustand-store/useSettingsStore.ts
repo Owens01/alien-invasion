@@ -2,7 +2,7 @@
 "use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { fadeOutMusic, playMusic } from "@/utils/audio"; // Import audio utilities
+import { fadeOutMusic } from "@/utils/audio"; // Import audio utilities
 
 // --- TYPES ---
 export type SettingsState = {
