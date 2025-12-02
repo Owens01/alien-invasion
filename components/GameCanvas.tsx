@@ -107,26 +107,7 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
       <div className="w-full lg:w-64 flex flex-col gap-4 mx-auto">
         <Controls actions={actions} state={state} />
 
-        <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
-          <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
-            How to Play
-          </h3>
-          <div className="text-slate-300 text-sm space-y-2">
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd>{" "}
-              <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd> Move
-            </p>
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd> Shoot
-            </p>
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause
-            </p>
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd> Settings
-            </p>
-          </div>
-        </div>
+        
       </div>
     </div>
   );

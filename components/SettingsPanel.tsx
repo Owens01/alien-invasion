@@ -56,13 +56,26 @@ export default function SettingsPanel({ state, actions, onClose }: SettingsPanel
 
         {/* --- How to Play Instructions --- */}
         <div className="mt-6 pt-4 border-t border-slate-600">
-          <h4 className="font-semibold mb-2 text-slate-300">How to Play</h4>
-          <ul className="text-xs space-y-1 text-slate-400">
-            <li>1. Move: Arrow keys or A/D</li>
-            <li>2. Shoot: Space</li>
-            <li>3. Pause: P or Escape</li>
-            <li>4. Settings: S</li>
-          </ul>
+          <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
+          <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
+            How to Play
+          </h3>
+          <div className="text-slate-300 text-sm space-y-2">
+            <p>
+              <kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd>{" "}
+              <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd> Move
+            </p>
+            <p>
+              <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd> Shoot
+            </p>
+            <p>
+              <kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause
+            </p>
+            <p>
+              <kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd> Settings
+            </p>
+          </div>
+        </div>
         </div>
 
         {/* --- Action Buttons --- */}
