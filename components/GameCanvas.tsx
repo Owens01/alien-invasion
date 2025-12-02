@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import useGame from "../hooks/useGame"; // ✅ your new custom engine
 import HUD from "./HUD";
-import Controls from "./Controls";
+// import Controls from "./Controls";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
 
@@ -38,7 +38,7 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
     <div className="w-full flex flex-col lg:flex-row gap-6 p-4 max-w-[1600px] mx-auto">
       {/* 🎮 GAME CANVAS AREA */}
       <div className="relative flex-1 w-full aspect-4/3 max-h-[80vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl mx-auto">
-        <canvas ref={ref} className="w-full h-full block" />
+        <canvas ref={ref} className="w-full h-full bg-slate-900 block" />
 
         {/* HUD */}
         <HUD
@@ -103,12 +103,12 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
         </AnimatePresence>
       </div>
 
-      {/* 🕹️ RIGHT SIDE CONTROL PANEL */}
+      {/* 🕹️ RIGHT SIDE CONTROL PANEL
       <div className="w-full lg:w-64 flex flex-col gap-4 mx-auto">
         <Controls actions={actions} state={state} />
 
         
-      </div>
+      </div> */}
     </div>
   );
 }
