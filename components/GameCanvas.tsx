@@ -41,7 +41,7 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
         <canvas ref={ref} className="w-full h-full block" />
 
         {/* HUD */}
-        <HUD
+        <HUD 
           state={{
             score: state.score,
             lives: state.lives,
