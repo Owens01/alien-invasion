@@ -28,7 +28,11 @@ export default function Home() {
 
         {/* RIGHT: Control Panel */}
         <div className="space-y-4">
-          <GameControls onOpenSettings={() => setShowSettings(true)} actions={actions} state={state} />
+          <GameControls
+            onOpenSettings={() => setShowSettings(true)}
+            actions={actions}
+            state={state}
+          />
         </div>
       </div>
 

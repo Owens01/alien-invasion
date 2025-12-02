@@ -10,7 +10,7 @@ import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
 
 type GameCanvasProps = {
-  canvasRef?: React.RefObject<HTMLCanvasElement>;
+  canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 };
 
 export default function GameCanvas({ canvasRef }: GameCanvasProps) {
