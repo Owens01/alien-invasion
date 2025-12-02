@@ -1,32 +1,21 @@
 "use client";
-
 import { useState, useEffect } from "react";
 
-/**
- * Persistent state hook that syncs with localStorage.
- * Safe for Next.js hydration (doesn’t access localStorage on the server)
- */
 export default function usePersistentState<T>(key: string, initial: T) {
-  const [state, setState] = useState<T>(initial);
-
-  // Hydration-safe initialization
-  useEffect(() => {
+  const [state, setState] = useState<T>(() => {
     try {
-      const stored = localStorage.getItem(key);
-      if (stored !== null) {
-        setState(JSON.parse(stored) as T);
-      }
+      const v = localStorage.getItem(key);
+      return v ? (JSON.parse(v) as T) : initial;
     } catch {
-      // Ignore errors
+      return initial;
     }
-  }, [key]);
+  });
 
-  // Sync changes to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(state));
     } catch {
-      // Ignore storage errors
+      // ignore storage errors (e.g. private mode or full quota)
     }
   }, [key, state]);
 

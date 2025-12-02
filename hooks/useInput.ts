@@ -1,54 +1,43 @@
 "use client";
-
 import { useEffect, useRef, useState } from "react";
 import { InputState } from "../types/types";
 
-/**
- * Hook to track player input (left, right, shoot)
- * Returns a stable InputState object
- */
 export default function useInput() {
-  const keys = useRef<InputState>({ left: false, right: false, shoot: false });
-  const [state, setState] = useState<InputState>({ ...keys.current });
+  const keys = useRef<Record<string, boolean>>({});
+  const [state, setState] = useState<InputState>({
+    left: false,
+    right: false,
+    shoot: false,
+  });
 
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      let changed = false;
-
-      if (["ArrowLeft", "a", "A"].includes(e.key)) {
+    function down(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A")
         keys.current.left = true;
-        changed = true;
-      }
-      if (["ArrowRight", "d", "D"].includes(e.key)) {
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D")
         keys.current.right = true;
-        changed = true;
-      }
-      if (e.key === " " || e.code === "Space") {
-        keys.current.shoot = true;
-        changed = true;
-      }
+      if (e.key === " " || e.code === "Space") keys.current.shoot = true;
 
-      if (changed) setState({ ...keys.current });
-    };
+      setState({
+        left: !!keys.current.left,
+        right: !!keys.current.right,
+        shoot: !!keys.current.shoot,
+      });
+    }
 
-    const up = (e: KeyboardEvent) => {
-      let changed = false;
-
-      if (["ArrowLeft", "a", "A"].includes(e.key)) {
+    function up(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A")
         keys.current.left = false;
-        changed = true;
-      }
-      if (["ArrowRight", "d", "D"].includes(e.key)) {
+      if (e.key === "ArrowRight" || e.key === "d" || e.key === "D")
         keys.current.right = false;
-        changed = true;
-      }
-      if (e.key === " " || e.code === "Space") {
-        keys.current.shoot = false;
-        changed = true;
-      }
+      if (e.key === " " || e.code === "Space") keys.current.shoot = false;
 
-      if (changed) setState({ ...keys.current });
-    };
+      setState({
+        left: !!keys.current.left,
+        right: !!keys.current.right,
+        shoot: !!keys.current.shoot,
+      });
+    }
 
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
