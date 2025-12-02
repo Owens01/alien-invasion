@@ -1,21 +1,39 @@
-import { useEffect, useRef } from 'react'
+"use client";
 
+import { useEffect, useRef, useCallback } from "react";
 
-export default function useAnimationFrame(callback: (dt: number) => void, active = true) {
-const last = useRef<number | null>(null)
-const raf = useRef<number | null>(null)
+/**
+ * Hook to run a callback on every animation frame.
+ * @param callback Function to run every frame, receives delta time (dt) in seconds.
+ * @param active Whether the animation loop is active. Defaults to true.
+ */
+export default function useAnimationFrame(
+  callback: (dt: number) => void,
+  active = true
+) {
+  const rafRef = useRef<number | null>(null);
+  const lastRef = useRef<number | null>(null);
 
+  // Wrap callback in useCallback to avoid unnecessary re-subscriptions
+  const frameCallback = useCallback(
+    (now: number) => {
+      if (lastRef.current == null) lastRef.current = now;
+      const dt = (now - lastRef.current) / 1000;
+      lastRef.current = now;
+      callback(dt);
+      rafRef.current = requestAnimationFrame(frameCallback);
+    },
+    [callback]
+  );
 
-useEffect(() => {
-if (!active) return
-function loop(now: number) {
-if (last.current == null) last.current = now
-const dt = (now - last.current) / 1000
-last.current = now
-callback(dt)
-raf.current = requestAnimationFrame(loop)
-}
-raf.current = requestAnimationFrame(loop)
-return () => { if (raf.current) cancelAnimationFrame(raf.current); last.current = null }
-}, [callback, active])
+  useEffect(() => {
+    if (!active) return;
+
+    rafRef.current = requestAnimationFrame(frameCallback);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      lastRef.current = null;
+    };
+  }, [active, frameCallback]);
 }

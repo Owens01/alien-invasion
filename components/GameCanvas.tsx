@@ -45,7 +45,7 @@ export default function GameCanvas() {
           relative
           flex-1
           w-full
-          aspect-[4/3]
+          aspect-4/3
           max-h-[80vh]
           bg-slate-900
           border-2 border-slate-700
