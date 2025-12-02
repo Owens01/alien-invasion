@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 type GameActions = {
   setVolume: (v: number) => void;
   setDifficulty: (d: string) => void;
@@ -9,9 +11,11 @@ type GameActions = {
   togglePause: () => void;
   restart: () => void;
   resetSettings: () => void;
-  toggleMusic?: () => void;     // ✅ optional new action
-  getMusicMuted?: () => boolean; // ✅ optional getter
-  startGame?: () => void;       // ✅ for welcome screen
+
+  // optional game-engine features
+  toggleMusic?: () => void;
+  getMusicMuted?: () => boolean;
+  startGame?: () => void;
 };
 
 type GameState = {
@@ -29,46 +33,99 @@ export default function Controls({ actions, state }: ControlsProps) {
   const musicMuted = actions.getMusicMuted?.() ?? false;
 
   return (
-    <div className="bg-black/40 p-2 rounded-md text-sm flex gap-2 items-center">
-      {!state?.started ? (
-        <button
-          onClick={() => actions.startGame?.()}
-          className="px-3 py-1 bg-green-700 hover:bg-green-600 rounded-md"
-        >
-          Start Game
-        </button>
-      ) : (
-        <>
+    <div
+      className="
+        w-full 
+        max-w-[900px]
+        mx-auto
+        mt-4
+        bg-black/40 
+        backdrop-blur-md
+        rounded-xl 
+        p-3 
+        flex 
+        flex-col 
+        sm:flex-row 
+        sm:items-center 
+        sm:justify-center
+        gap-3
+        text-sm
+        text-white
+      "
+    >
+      {/* Start / Restart / Pause */}
+      <div className="flex flex-wrap gap-2 justify-center">
+        {!state?.started ? (
           <button
-            onClick={() => actions.restart()}
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded"
+            onClick={() => actions.startGame?.()}
+            className="
+              px-4 py-2 
+              bg-green-700 hover:bg-green-600 
+              rounded-lg 
+              w-full sm:w-auto 
+              text-center
+              transition
+            "
           >
-            Restart
+            Start Game
           </button>
-          <button
-            onClick={() => actions.togglePause()}
-            className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded"
-          >
-            {state?.paused ? "Resume" : "Pause"}
-          </button>
-        </>
-      )}
+        ) : (
+          <>
+            <button
+              onClick={() => actions.restart()}
+              className="
+                px-4 py-2 
+                bg-slate-700 hover:bg-slate-600 
+                rounded-lg 
+                transition
+              "
+            >
+              Restart
+            </button>
 
-      <button
-        onClick={() => actions.toggleMute()}
-        className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded"
-      >
-        {isMuted ? "Unmute SFX" : "Mute SFX"}
-      </button>
+            <button
+              onClick={() => actions.togglePause()}
+              className="
+                px-4 py-2 
+                bg-slate-700 hover:bg-slate-600 
+                rounded-lg 
+                transition
+              "
+            >
+              {state?.paused ? "Resume" : "Pause"}
+            </button>
+          </>
+        )}
+      </div>
 
-      {actions.toggleMusic && (
+      {/* Sound + Music */}
+      <div className="flex flex-wrap gap-2 justify-center">
         <button
-          onClick={() => actions.toggleMusic?.()}
-          className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded"
+          onClick={() => actions.toggleMute()}
+          className="
+            px-4 py-2 
+            bg-slate-700 hover:bg-slate-600 
+            rounded-lg 
+            transition
+          "
         >
-          {musicMuted ? "Play Music" : "Mute Music"}
+          {isMuted ? "Unmute SFX" : "Mute SFX"}
         </button>
-      )}
+
+        {actions.toggleMusic && (
+          <button
+            onClick={() => actions.toggleMusic?.()}
+            className="
+              px-4 py-2 
+              bg-slate-700 hover:bg-slate-600 
+              rounded-lg 
+              transition
+            "
+          >
+            {musicMuted ? "Play Music" : "Mute Music"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,213 +1,145 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+import useGame from "../hooks/useGame";        // ✅ your new custom engine
 import HUD from "./HUD";
+import Controls from "./Controls";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
-
-// Using the updated stores
-import { useGameStore } from "@/app/zustand-store/useGameStore";
-import { useSettingsStore } from "@/app/zustand-store/useSettingsStore";
-import { useStatsStore } from "@/app/zustand-store/useStatsStore";
-import useInput from "../hooks/useInput";
-
-import {
-  playMusic,
-  stopMusic,
-  fadeOutMusic,
-  resumeMusic,
-} from "../utils/audio";
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // This input state will be stable across re-renders for the Ref
-  const currentInput = useInput();
-  const inputRef = useRef(currentInput);
-
-  const {
-    paused,
-    gameOver,
-    gameStarted,
-    togglePause,
-    startGame,
-    restart,
-    runGameLoop: runGameLoopStore,
-    stopGameLoop: stopGameLoopStore,
-    setInputRef, // New setter for the input Ref
-  } = useGameStore();
-
-  const {
-    muted,
-    volume,
-    difficulty,
-    particles,
-    toggleMute,
-    setVolume,
-    setDifficulty,
-    setParticles,
-    resetSettings,
-  } = useSettingsStore();
-
-  const { score, lives, wave } = useStatsStore();
+  // 🔥 NEW ENGINE HOOK — this replaces ALL Zustand
+  const { state, actions } = useGame(canvasRef);
 
   const [showSettings, setShowSettings] = useState(false);
 
-  // FIX 1: Memoize the actions from the store to ensure stable references
-  // This is crucial for the useEffect dependency array
-  const runGameLoop = useCallback(
-    (canvasRef: React.RefObject<HTMLCanvasElement>) =>
-      runGameLoopStore(canvasRef),
-    [runGameLoopStore]
-  );
-
-  const stopGameLoop = useCallback(
-    () => stopGameLoopStore(),
-    [stopGameLoopStore]
-  );
-
-  // FIX 2: Keep the input ref updated and pass it to the store
-  // This runs on every input change, but does *not* trigger the game loop useEffect
-  useEffect(() => {
-    inputRef.current = currentInput;
-    setInputRef(inputRef); // Pass the ref object to the store
-  }, [currentInput, setInputRef]);
-
-  // --- Handle key events ---
+  // Keyboard shortcuts
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "s" || e.key === "S") setShowSettings((v) => !v);
-      if (e.key === "p" || e.key === "P") togglePause();
+      if (e.key === "p" || e.key === "P") actions.togglePause();
     }
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [togglePause]);
-
-  // --- Start game once on mount ---
-  useEffect(() => {
-    if (!gameStarted) startGame();
-  }, [gameStarted, startGame]);
-
-  // --- Start the game loop (once) ---
-  // FIX 3: Removed currentInput dependency from the original file
-  // And changed dependencies to use stable memoized actions.
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    // runGameLoop now only depends on the stable canvasRef
-    // The game loop reads the input from the stable inputRef stored in Zustand
-    const cleanup = runGameLoop(canvasRef);
-
-    return () => {
-      cleanup();
-      stopGameLoop();
-    };
-    // Dependencies are now stable memoized functions from the store
-  }, [runGameLoop, stopGameLoop]);
-
-  // --- Handle music and pause/resume logic ---
-  useEffect(() => {
-    if (!muted && gameStarted && !paused) {
-      resumeMusic(volume);
-    } else if (paused || gameOver) {
-      fadeOutMusic();
-    }
-
-    return () => stopMusic();
-  }, [paused, gameOver, muted, volume, gameStarted]);
+  }, [actions]);
 
   return (
-    <div className="flex w-full max-w-6xl mx-auto gap-6 p-4">
-      {/* 🎮 Game Canvas */}
-      <div className="relative flex-1 aspect-4/3 rounded-xl overflow-hidden bg-slate-900 border-2 border-slate-700 shadow-2xl">
+    <div
+      className="
+        w-full
+        flex flex-col lg:flex-row
+        gap-6
+        p-4
+        max-w-[1600px]
+        mx-auto
+      "
+    >
+      {/* 🎮 GAME CANVAS AREA */}
+      <div
+        className="
+          relative
+          flex-1
+          w-full
+          aspect-[4/3]
+          max-h-[80vh]
+          bg-slate-900
+          border-2 border-slate-700
+          rounded-xl
+          overflow-hidden
+          shadow-2xl
+          mx-auto
+        "
+      >
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        <HUD state={{ score, lives, wave }} />
+        {/* HUD */}
+        <HUD
+          state={{
+            score: state.score,
+            lives: state.lives,
+            wave: state.wave,
+          }}
+        />
 
-        {paused && <PauseOverlay onResume={togglePause} />}
+        {/* Pause Overlay */}
+        {state.paused && <PauseOverlay onResume={actions.togglePause} />}
 
+        {/* Settings Panel */}
         {showSettings && (
           <SettingsPanel
-            state={{ volume, difficulty, particles, muted }}
+            state={{
+              volume: state.volume,
+              difficulty: state.difficulty,
+              particles: state.particles,
+              muted: state.muted,
+            }}
             actions={{
-              setVolume,
-              setDifficulty,
-              setParticles,
-              toggleMute,
-              resetSettings,
+              setVolume: actions.setVolume,
+              setDifficulty: actions.setDifficulty,
+              setParticles: actions.setParticles,
+              toggleMute: actions.toggleMute,
+              resetSettings: actions.resetSettings,
             }}
             onClose={() => setShowSettings(false)}
           />
         )}
 
+        {/* Game Over */}
         <AnimatePresence>
-          {gameOver && (
+          {state.gameOver && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center text-white z-20"
+              className="
+                absolute inset-0
+                bg-black/80
+                flex flex-col items-center justify-center
+                text-white
+                z-20
+              "
             >
               <motion.h2
                 initial={{ y: -20 }}
                 animate={{ y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4 }}
                 className="text-3xl font-bold mb-4"
               >
                 Game Over
               </motion.h2>
-              <p className="text-lg mb-4">Your Score: {score}</p>
-              <div className="flex gap-4">
-                <button
-                  onClick={restart}
-                  className="bg-blue-600 px-6 py-2 rounded hover:bg-blue-500 font-bold transition-colors"
-                >
-                  Restart
-                </button>
-              </div>
+
+              <p className="text-lg mb-6">Your Score: {state.score}</p>
+
+              <button
+                onClick={actions.restart}
+                className="
+                  px-6 py-3
+                  bg-blue-600 hover:bg-blue-500
+                  rounded-lg font-bold
+                "
+              >
+                Restart
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* 🕹️ Control Panel */}
-      <div className="w-64 flex flex-col gap-4">
-        <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700 flex flex-col gap-3">
-          <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-1">
-            Controls
-          </h3>
-
-          <button
-            onClick={togglePause}
-            className={`w-full py-3 rounded-lg font-bold transition-all ${
-              paused
-                ? "bg-green-600 hover:bg-green-500 text-white"
-                : "bg-yellow-600 hover:bg-yellow-500 text-white"
-            }`}
-          >
-            {paused ? "RESUME" : "PAUSE"}
-          </button>
-
-          <button
-            onClick={toggleMute}
-            className={`w-full py-3 rounded-lg font-medium transition-colors border ${
-              muted
-                ? "bg-red-900/50 border-red-500 text-red-200"
-                : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-200"
-            }`}
-          >
-            {muted ? "Audio: OFF" : "Mute Audio"}
-          </button>
-
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors mt-2"
-          >
-            SETTINGS
-          </button>
-        </div>
+      {/* 🕹️ RIGHT SIDE CONTROL PANEL */}
+      <div
+        className="
+          w-full lg:w-64
+          flex flex-col
+          gap-4
+          mx-auto
+        "
+      >
+        <Controls actions={actions} state={state} />
 
         <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
           <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
