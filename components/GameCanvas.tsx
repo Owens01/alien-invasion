@@ -5,9 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import HUD from "./HUD";
 import SettingsPanel from "./SettingsPanel";
-// import Controls from "./Controls"; // Removed as requested
 import PauseOverlay from "./PauseOverlay";
-import useGame from "../hooks/useGame";
+
+// ✅ NEW: Import the three Zustand stores
+import { useGameStore } from "@/app/zustand-store/useGameStore";
+import { useSettingsStore } from "@/app/zustand-store/useSettingsStore";
+import { useStatsStore } from "@/app/zustand-store/useStatsStore";
+import useInput from "../hooks/useInput"; // Import the input hook
+
 import {
   playMusic,
   stopMusic,
@@ -17,72 +22,101 @@ import {
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { state, actions } = useGame(canvasRef);
-  const [showSettings, setShowSettings] = useState(false);
   
-  // Removed explicit showWelcome state as "Start Game" button is removed
-  // We will auto-start the game logic, but audio might need a click interaction on the page later
+  // ✅ NEW: Get input state for the game loop
+  const currentInput = useInput();
+  
+  // ✅ NEW: Access stores separately
+  const { paused, gameOver, gameStarted, togglePause, startGame, restart, runGameLoop, stopGameLoop } = useGameStore();
+  const { muted, volume, difficulty, particles, toggleMute, setVolume, setDifficulty, setParticles, resetSettings } = useSettingsStore();
+  const { score, lives, wave } = useStatsStore();
+  
+  const [showSettings, setShowSettings] = useState(false);
   
   // Handle 'S' key to toggle settings, 'P' for pause
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "s" || e.key === "S") setShowSettings((v) => !v);
-      if (e.key === "p" || e.key === "P") actions.togglePause();
+      if (e.key === "p" || e.key === "P") togglePause();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [actions]);
+  }, [togglePause]);
 
   // 🎵 Handle background music
   useEffect(() => {
-    // Try to play music on mount (might be blocked by browser autoplay policy until user interacts)
-    playMusic("theme", 0.4);
+    // Try to play music on mount
+    if (!muted) playMusic("theme", volume);
   }, []);
 
   useEffect(() => {
-    if (state.paused) {
+    if (paused) {
       fadeOutMusic();
-    } else {
-      resumeMusic();
+    } else if (gameStarted && !muted) {
+      resumeMusic(volume);
     }
 
-    if (state.gameOver) fadeOutMusic();
+    if (gameOver) fadeOutMusic();
 
     return () => stopMusic();
-  }, [state.paused, state.gameOver]);
+  }, [paused, gameOver, gameStarted, muted, volume]);
 
-  // Auto-start game on mount since Start Button is removed
+  // ✅ NEW: Start game loop with input state
   useEffect(() => {
-    actions.startGame();
-  }, []);
+    if (!gameStarted) {
+      startGame();
+    }
+    
+    // Start the game loop, passing canvas ref and current input
+    const cleanup = runGameLoop(canvasRef, currentInput);
+    
+    return () => {
+      cleanup();
+      stopGameLoop();
+    };
+  }, [gameStarted, startGame, runGameLoop, stopGameLoop, currentInput]);
 
   return (
     <div className="flex w-full max-w-6xl mx-auto gap-6 p-4">
       {/* 🎮 Left Side: Game Canvas */}
       <div className="relative flex-1 aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border-2 border-slate-700 shadow-2xl">
-        {/* Canvas Background Fix: bg-slate-900 matches deep blue theme better than black */}
         <canvas ref={canvasRef} className="w-full h-full block" />
 
-        <HUD state={state} />
-
-        {/* Note: Overlay Buttons (Pause/Settings) removed from here */}
-        {/* Note: Bottom Controls removed from here */}
+        {/* ✅ FIXED: Pass only the stats that HUD expects */}
+        <HUD 
+          state={{ 
+            score, 
+            lives, 
+            wave
+          }} 
+        />
 
         {/* Paused Overlay */}
-        {state.paused && <PauseOverlay onResume={() => actions.togglePause()} />}
+        {paused && <PauseOverlay onResume={togglePause} />}
 
-        {/* Settings Modal (Overlaying the canvas) */}
+        {/* Settings Modal - ✅ FIXED: Pass state and actions */}
         {showSettings && (
           <SettingsPanel
-            state={state}
-            actions={actions}
+            state={{
+              volume,
+              difficulty,
+              particles,
+              muted
+            }}
+            actions={{
+              setVolume,
+              setDifficulty,
+              setParticles,
+              toggleMute,
+              resetSettings
+            }}
             onClose={() => setShowSettings(false)}
           />
         )}
 
         {/* 💀 Game Over Screen */}
         <AnimatePresence>
-          {state.gameOver && (
+          {gameOver && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -97,10 +131,10 @@ export default function GameCanvas() {
               >
                 Game Over
               </motion.h2>
-              <p className="text-lg mb-4">Your Score: {state.score}</p>
+              <p className="text-lg mb-4">Your Score: {score}</p>
               <div className="flex gap-4">
                 <button
-                  onClick={() => actions.restart()}
+                  onClick={restart}
                   className="bg-blue-600 px-6 py-2 rounded hover:bg-blue-500 font-bold transition-colors"
                 >
                   Restart
@@ -112,7 +146,6 @@ export default function GameCanvas() {
       </div>
 
       {/* 🕹️ Right Side: Control Panel */}
-      {/* This replaces the old Settings/Instructions text */}
       <div className="w-64 flex flex-col gap-4">
         <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700 flex flex-col gap-3">
           <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-1">
@@ -121,49 +154,48 @@ export default function GameCanvas() {
           
           {/* 1. Pause Button */}
           <button
-            onClick={() => actions.togglePause()}
+            onClick={togglePause}
             className={`w-full py-3 rounded-lg font-bold transition-all ${
-              state.paused
+              paused
                 ? "bg-green-600 hover:bg-green-500 text-white"
                 : "bg-yellow-600 hover:bg-yellow-500 text-white"
             }`}
           >
-            {state.paused ? "RESUME" : "PAUSE"}
+            {paused ? "RESUME" : "PAUSE"}
           </button>
 
-          {/* 2. Mute SFX (Bottom) */}
+          {/* 2. Mute SFX/Music Toggle */}
           <button
-            onClick={() => actions.toggleMute()} 
-            // Note: Assuming single toggleMute for now based on previous file. 
-            // If you separate SFX/Music in actions, change this line.
+            onClick={toggleMute}
             className={`w-full py-3 rounded-lg font-medium transition-colors border ${
-              state.muted
+              muted
                 ? "bg-red-900/50 border-red-500 text-red-200"
                 : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-200"
             }`}
           >
-            {state.muted ? "SFX: OFF" : "Mute SFX"}
+            {muted ? "Audio: OFF" : "Mute Audio"}
           </button>
 
-          {/* 3. Mute Music */}
-          <button
-            onClick={() => actions.toggleMute()}
-            className={`w-full py-3 rounded-lg font-medium transition-colors border ${
-              state.muted
-                ? "bg-red-900/50 border-red-500 text-red-200"
-                : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-200"
-            }`}
-          >
-            {state.muted ? "Music: OFF" : "Mute Music"}
-          </button>
-
-          {/* 4. Settings */}
+          {/* 3. Settings */}
           <button
             onClick={() => setShowSettings(true)}
             className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors mt-2"
           >
             SETTINGS
           </button>
+        </div>
+
+        {/* Instructions Panel */}
+        <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
+          <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
+            How to Play
+          </h3>
+          <div className="text-slate-300 text-sm space-y-2">
+            <p><kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd> <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd> Move</p>
+            <p><kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd> Shoot</p>
+            <p><kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause</p>
+            <p><kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd> Settings</p>
+          </div>
         </div>
       </div>
     </div>
