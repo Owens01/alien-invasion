@@ -3,17 +3,23 @@
 import React, { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import useGame from "../hooks/useGame";        // ✅ your new custom engine
+import useGame from "../hooks/useGame"; // ✅ your new custom engine
 import HUD from "./HUD";
 import Controls from "./Controls";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
 
-export default function GameCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+type GameCanvasProps = {
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
+};
+
+export default function GameCanvas({ canvasRef }: GameCanvasProps) {
+  // Use external ref if provided, otherwise fallback to internal
+  const internalRef = useRef<HTMLCanvasElement | null>(null);
+  const ref = canvasRef ?? internalRef;
 
   // 🔥 NEW ENGINE HOOK — this replaces ALL Zustand
-  const { state, actions } = useGame(canvasRef);
+  const { state, actions } = useGame(ref);
 
   const [showSettings, setShowSettings] = useState(false);
 
@@ -29,33 +35,10 @@ export default function GameCanvas() {
   }, [actions]);
 
   return (
-    <div
-      className="
-        w-full
-        flex flex-col lg:flex-row
-        gap-6
-        p-4
-        max-w-[1600px]
-        mx-auto
-      "
-    >
+    <div className="w-full flex flex-col lg:flex-row gap-6 p-4 max-w-[1600px] mx-auto">
       {/* 🎮 GAME CANVAS AREA */}
-      <div
-        className="
-          relative
-          flex-1
-          w-full
-          aspect-4/3
-          max-h-[80vh]
-          bg-slate-900
-          border-2 border-slate-700
-          rounded-xl
-          overflow-hidden
-          shadow-2xl
-          mx-auto
-        "
-      >
-        <canvas ref={canvasRef} className="w-full h-full block" />
+      <div className="relative flex-1 w-full aspect-4/3 max-h-[80vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl mx-auto">
+        <canvas ref={ref} className="w-full h-full block" />
 
         {/* HUD */}
         <HUD
@@ -96,13 +79,7 @@ export default function GameCanvas() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="
-                absolute inset-0
-                bg-black/80
-                flex flex-col items-center justify-center
-                text-white
-                z-20
-              "
+              className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-white z-20"
             >
               <motion.h2
                 initial={{ y: -20 }}
@@ -117,11 +94,7 @@ export default function GameCanvas() {
 
               <button
                 onClick={actions.restart}
-                className="
-                  px-6 py-3
-                  bg-blue-600 hover:bg-blue-500
-                  rounded-lg font-bold
-                "
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold"
               >
                 Restart
               </button>
@@ -131,14 +104,7 @@ export default function GameCanvas() {
       </div>
 
       {/* 🕹️ RIGHT SIDE CONTROL PANEL */}
-      <div
-        className="
-          w-full lg:w-64
-          flex flex-col
-          gap-4
-          mx-auto
-        "
-      >
+      <div className="w-full lg:w-64 flex flex-col gap-4 mx-auto">
         <Controls actions={actions} state={state} />
 
         <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
