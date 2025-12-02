@@ -8,7 +8,7 @@ type WelcomeScreenProps = {
 
 export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-slate-900 to-black flex flex-col items-center justify-center text-white">
+    <div className="w-full h-screen bg-linear-to-br from-slate-900 to-black flex flex-col items-center justify-center text-white">
       <h1 className="text-6xl font-bold mb-8 text-center">
         Welcome to Space Shooter
       </h1>
