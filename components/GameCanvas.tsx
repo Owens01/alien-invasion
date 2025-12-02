@@ -38,7 +38,7 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
     <div className="w-full flex flex-col lg:flex-row gap-6 p-4 max-w-[1600px] mx-auto">
       {/* 🎮 GAME CANVAS AREA */}
       <div className="relative flex-1 w-full aspect-4/3 max-h-[80vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl mx-auto">
-        <canvas ref={ref} className="w-full h-full bg-slate-900 block" />
+        <canvas ref={ref} className="w-full h-full bg-red-900 block" />
 
         {/* HUD */}
         <HUD

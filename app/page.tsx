@@ -22,7 +22,7 @@ export default function Home() {
     <main className="p-4 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
         {/* LEFT/CENTER: Game Canvas Area */}
-        <div className="lg:col-span-2 bg-slate-800 rounded-2xl p-3 shadow-2xl border border-slate-700">
+        <div className="lg:col-span-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
           <GameCanvas canvasRef={canvasRef} />
         </div>
 
