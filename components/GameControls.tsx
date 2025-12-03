@@ -6,11 +6,9 @@ type GameControlsProps = {
   onOpenSettings: () => void;
   actions: {
     togglePause: () => void;
-    toggleMute: () => void;
   };
   state: {
     paused: boolean;
-    muted: boolean;
   };
 };
 
@@ -39,19 +37,6 @@ export default function GameControls({ onOpenSettings, actions, state }: GameCon
         `}
       >
         {state.paused ? "RESUME" : "PAUSE"}
-      </button>
-
-      {/* MUTE / UNMUTE */}
-      <button
-        onClick={actions.toggleMute}
-        className={`
-          w-full py-3 rounded-lg font-medium transition-colors mb-3 border
-          ${state.muted
-            ? "bg-red-900/50 border-red-500 text-red-200"
-            : "bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-200"}
-        `}
-      >
-        {state.muted ? "UNMUTE ALL" : "MUTE ALL"}
       </button>
 
       {/* SETTINGS */}
