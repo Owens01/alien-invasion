@@ -61,7 +61,6 @@ export default function GamePage() {
             setVolume: actions.setVolume,
             setDifficulty: actions.setDifficulty,
             setParticles: actions.setParticles,
-            toggleMute: actions.toggleMute,
             resetSettings: actions.resetSettings,
           }}
           onClose={() => setShowSettings(false)}

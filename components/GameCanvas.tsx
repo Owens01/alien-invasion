@@ -56,7 +56,6 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
               setVolume: actions.setVolume,
               setDifficulty: actions.setDifficulty,
               setParticles: actions.setParticles,
-              toggleMute: actions.toggleMute,
               resetSettings: actions.resetSettings,
             }}
             onClose={() => setShowSettings(false)}

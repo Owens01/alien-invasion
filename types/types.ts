@@ -40,7 +40,6 @@ export type SettingsPanelProps = {
     setVolume: (v: number) => void;
     setDifficulty: (d: string) => void;
     setParticles: (v: boolean) => void;
-    toggleMute: () => void;
     resetSettings: () => void;
   };
   onClose: () => void;
