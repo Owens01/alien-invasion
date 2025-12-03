@@ -127,6 +127,7 @@ export default function useGame(
     function rand(min: number, max: number) {
       return min + Math.random() * (max - min);
     }
+    
     function spawnWave(n = 6) {
       for (let i = 0; i < n; i++) {
         enemies.push({
@@ -140,7 +141,8 @@ export default function useGame(
       }
     }
 
-    if (stateRef.current.gameStarted) spawnWave(6 * stats.wave);
+    // 🔥 FIX: Track if initial wave has been spawned
+    let initialWaveSpawned = false;
 
     const baseDescentSpeed = descentSpeed;
     let last = performance.now();
@@ -148,6 +150,12 @@ export default function useGame(
     function update(dt: number) {
       if (!stateRef.current.gameStarted || stateRef.current.paused || gameOver)
         return;
+
+      // 🔥 FIX: Spawn initial wave when game starts
+      if (!initialWaveSpawned) {
+        spawnWave(6 * stats.wave);
+        initialWaveSpawned = true;
+      }
 
       const currentInput = inputRef.current;
       const width = canvas!.width / dpr;
