@@ -8,28 +8,28 @@ import GameControls from "./GameControls";
 import SettingsPanel from "./SettingsPanel";
 import useGame from "../hooks/useGame";
 
-// Dynamic import for the canvas — client-only (same as your original)
+// Dynamic import for the canvas — client-only
 const GameCanvas = dynamic(() => import("./GameCanvas"), { ssr: false });
 
 export default function GamePage() {
-  // Canvas ref (passed into the engine hook and to the canvas)
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Settings modal state (same as original)
   const [showSettings, setShowSettings] = useState(false);
-
-  // Game started flag (controls welcome -> game flow)
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Hook provides both state and actions (exactly as you used them)
   const { state, actions } = useGame(canvasRef);
 
-  // Render welcome screen until the user starts the game
+  // Show welcome screen until user clicks Start
   if (!hasStarted) {
-    return <WelcomeScreen onStart={() => setHasStarted(true)} />;
+    return (
+      <WelcomeScreen
+        onStart={() => {
+          setHasStarted(true);
+          actions.startGame(); // <-- important: start the game loop
+        }}
+      />
+    );
   }
 
-  // After start: render game layout (canvas + controls + settings)
   return (
     <main className="p-4 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
