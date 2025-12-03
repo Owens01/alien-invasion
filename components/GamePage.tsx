@@ -8,37 +8,37 @@ import GameControls from "./GameControls";
 import SettingsPanel from "./SettingsPanel";
 import useGame from "../hooks/useGame";
 
-// Dynamic import for the canvas — client-only
+// Client-only canvas
 const GameCanvas = dynamic(() => import("./GameCanvas"), { ssr: false });
 
 export default function GamePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const [showSettings, setShowSettings] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
 
+  // Hook provides state + actions
   const { state, actions } = useGame(canvasRef);
 
-  // Show welcome screen until user clicks Start
+  // Handle start game
+  const handleStartGame = () => {
+    setHasStarted(true);
+    actions.startGame(); // ✅ starts the game loop
+  };
+
   if (!hasStarted) {
-    return (
-      <WelcomeScreen
-        onStart={() => {
-          setHasStarted(true);
-          actions.startGame(); // <-- important: start the game loop
-        }}
-      />
-    );
+    return <WelcomeScreen onStart={handleStartGame} />;
   }
 
   return (
     <main className="p-4 md:p-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
-        {/* LEFT/CENTER: Game Canvas Area */}
+        {/* LEFT/CENTER: Game Canvas */}
         <div className="lg:col-span-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
           <GameCanvas canvasRef={canvasRef} />
         </div>
 
-        {/* RIGHT: Control Panel */}
+        {/* RIGHT: Controls */}
         <div className="space-y-4">
           <GameControls
             onOpenSettings={() => setShowSettings(true)}
@@ -48,7 +48,7 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* Settings Modal */}
+      {/* Settings Panel */}
       {showSettings && (
         <SettingsPanel
           state={{

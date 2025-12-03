@@ -3,9 +3,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import useGame from "../hooks/useGame"; // ✅ your new custom engine
+import useGame from "../hooks/useGame";
 import HUD from "./HUD";
-// import Controls from "./Controls";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
 
@@ -14,13 +13,10 @@ type GameCanvasProps = {
 };
 
 export default function GameCanvas({ canvasRef }: GameCanvasProps) {
-  // Use external ref if provided, otherwise fallback to internal
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const ref = canvasRef ?? internalRef;
 
-  // 🔥 NEW ENGINE HOOK — this replaces ALL Zustand
   const { state, actions } = useGame(ref);
-
   const [showSettings, setShowSettings] = useState(false);
 
   // Keyboard shortcuts
@@ -29,19 +25,16 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
       if (e.key === "s" || e.key === "S") setShowSettings((v) => !v);
       if (e.key === "p" || e.key === "P") actions.togglePause();
     }
-
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [actions]);
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6 p-4 max-w-[1600px] mx-auto">
-      {/* 🎮 GAME CANVAS AREA */}
       <div className="relative flex-1 w-full h-[80vh] lg:h-[90vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl mx-auto">
         <canvas ref={ref} className="w-full h-full block" />
 
-        {/* HUD */}
-        <HUD 
+        <HUD
           state={{
             score: state.score,
             lives: state.lives,
@@ -49,10 +42,8 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
           }}
         />
 
-        {/* Pause Overlay */}
         {state.paused && <PauseOverlay onResume={actions.togglePause} />}
 
-        {/* Settings Panel */}
         {showSettings && (
           <SettingsPanel
             state={{
@@ -72,7 +63,6 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
           />
         )}
 
-        {/* Game Over */}
         <AnimatePresence>
           {state.gameOver && (
             <motion.div
@@ -102,13 +92,6 @@ export default function GameCanvas({ canvasRef }: GameCanvasProps) {
           )}
         </AnimatePresence>
       </div>
-
-      {/* 🕹️ RIGHT SIDE CONTROL PANEL
-      <div className="w-full lg:w-64 flex flex-col gap-4 mx-auto">
-        <Controls actions={actions} state={state} />
-
-        
-      </div> */}
     </div>
   );
 }
