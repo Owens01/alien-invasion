@@ -44,23 +44,24 @@ export default function useGame(
     lives: 3,
     wave: 1,
     highScores: [] as number[],
+    highScore: 0,
   });
 
   const rafRef = useRef<number | null>(null);
   const stateRef = useRef({ paused: false, gameStarted: false });
-  
+
   // Store settings and stats in refs so they don't trigger re-renders
   const settingsRef = useRef(settings);
   const statsRef = useRef(stats);
-  
+
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
-  
+
   useEffect(() => {
     statsRef.current = stats;
   }, [stats]);
-  
+
   const input = useInput();
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -124,7 +125,7 @@ export default function useGame(
     function rand(min: number, max: number) {
       return min + Math.random() * (max - min);
     }
-    
+
     function spawnWave(n = 6) {
       console.log("🚀 SPAWNING WAVE with", n, "enemies");
       // Get difficulty from ref
@@ -141,7 +142,7 @@ export default function useGame(
           difficultyMultiplier = 1.4;
           break;
       }
-      
+
       for (let i = 0; i < n; i++) {
         enemies.push({
           x: 40 + i * 70,
@@ -162,7 +163,7 @@ export default function useGame(
     function update(dt: number) {
       const currentSettings = settingsRef.current;
       const currentStats = statsRef.current;
-      
+
       if (!stateRef.current.gameStarted || stateRef.current.paused) {
         return;
       }
@@ -199,7 +200,10 @@ export default function useGame(
       // Player movement
       if (currentInput.left) player.x -= player.speed * dt;
       if (currentInput.right) player.x += player.speed * dt;
+      if (currentInput.up) player.y -= player.speed * dt;
+      if (currentInput.down) player.y += player.speed * dt;
       player.x = clamp(player.x, 0, width - player.w);
+      player.y = clamp(player.y, 0, height - player.h);
 
       // Player shooting
       if (currentInput.shoot && bullets.length < config.maxBullets) {
@@ -241,13 +245,15 @@ export default function useGame(
             w: 6,
             h: 10,
           });
-          if (!currentSettings.muted) playSound("shoot", currentSettings.volume * 0.9);
+          if (!currentSettings.muted)
+            playSound("shoot", currentSettings.volume * 0.9);
           e.shootTimer = rand(1, 3.5) / difficultyMultiplier;
         }
 
         if (e.y + e.h >= player.y) {
           enemies.splice(ei, 1);
-          if (!currentSettings.muted) playSound("explode", currentSettings.volume);
+          if (!currentSettings.muted)
+            playSound("explode", currentSettings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
             if (newLives <= 0) setGameOver(true);
@@ -273,7 +279,8 @@ export default function useGame(
         };
         if (detectCollisions(b, playerRect)) {
           enemyBullets.splice(i, 1);
-          if (!currentSettings.muted) playSound("explode", currentSettings.volume);
+          if (!currentSettings.muted)
+            playSound("explode", currentSettings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
             if (newLives <= 0) setGameOver(true);
@@ -299,8 +306,13 @@ export default function useGame(
             }
             bullets.splice(i, 1);
             enemies.splice(j, 1);
-            setStats((s) => ({ ...s, score: s.score + 10 }));
-            if (!currentSettings.muted) playSound("explode", currentSettings.volume);
+            setStats((s) => {
+              const newScore = s.score + 10;
+              const newHighScore = Math.max(newScore, s.highScore);
+              return { ...s, score: newScore, highScore: newHighScore };
+            });
+            if (!currentSettings.muted)
+              playSound("explode", currentSettings.volume);
             break;
           }
         }
@@ -393,13 +405,17 @@ export default function useGame(
       setGameStarted(true);
     },
     restart: () => {
-      setStats({
+      console.log("🔄 RESTART GAME");
+      setStats((s) => ({
         score: 0,
         lives: 3,
         wave: 1,
-        highScores: stats.highScores || [],
-      });
+        highScores: s.highScores || [],
+        highScore: s.highScore,
+      }));
       setGameOver(false);
+      setPaused(false);
+      stateRef.current.paused = false;
       stateRef.current.gameStarted = true;
       setGameStarted(true);
       playMusic("theme", settings.volume);

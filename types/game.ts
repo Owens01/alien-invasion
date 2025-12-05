@@ -24,4 +24,5 @@ export type GameState = {
   gameOver: boolean;
   gameStarted: boolean;
   highScores: number[];
+  highScore: number;
 };

@@ -8,7 +8,7 @@ export type GameState = {
   particles: boolean;
   muted: boolean;
   paused: boolean;
-}
+};
 
 export type HUDProps = {
   state: {
@@ -27,7 +27,7 @@ export type GameActions = {
   togglePause: () => void;
   restart: () => void;
   resetSettings: () => void;
-}
+};
 
 export type SettingsPanelProps = {
   state: {
@@ -35,21 +35,23 @@ export type SettingsPanelProps = {
     difficulty: string;
     particles: boolean;
     muted: boolean;
+    highScore: number;
   };
   actions: {
     setVolume: (v: number) => void;
     setDifficulty: (d: string) => void;
     setParticles: (v: boolean) => void;
     resetSettings: () => void;
+    toggleMute: () => void;
   };
   onClose: () => void;
 };
 
-
-
 export type InputState = {
   left: boolean;
   right: boolean;
+  up: boolean;
+  down: boolean;
   shoot: boolean;
 };
 

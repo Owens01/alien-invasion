@@ -69,12 +69,14 @@ export default function GamePage() {
               difficulty: gameState.difficulty,
               particles: gameState.particles,
               muted: gameState.muted,
+              highScore: gameState.highScore,
             }}
             actions={{
               setVolume: gameActions.setVolume,
               setDifficulty: gameActions.setDifficulty,
               setParticles: gameActions.setParticles,
               resetSettings: gameActions.resetSettings,
+              toggleMute: gameActions.toggleMute,
             }}
             onClose={() => setShowSettings(false)}
           />

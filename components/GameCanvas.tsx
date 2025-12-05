@@ -38,12 +38,28 @@ export default function GameCanvas({
   // Keyboard shortcuts
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "s" || e.key === "S") setShowSettings((v) => !v);
+      // Only toggle settings if game isn't paused (or if settings is already open)
+      if (e.key === "s" || e.key === "S") {
+        if (!state.paused || showSettings) {
+          setShowSettings((v) => {
+            const willShow = !v;
+            // Auto-pause when opening settings
+            if (willShow && !state.paused) {
+              actions.togglePause();
+            }
+            // Resume when closing settings (if was paused by settings)
+            if (!willShow && state.paused) {
+              actions.togglePause();
+            }
+            return willShow;
+          });
+        }
+      }
       if (e.key === "p" || e.key === "P") actions.togglePause();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [actions]);
+  }, [actions, state.paused, showSettings]);
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6 p-4 max-w-[1600px] mx-auto">
@@ -58,7 +74,9 @@ export default function GameCanvas({
           }}
         />
 
-        {state.paused && <PauseOverlay onResume={actions.togglePause} />}
+        {state.paused && !state.gameOver && (
+          <PauseOverlay onResume={actions.togglePause} />
+        )}
 
         {showSettings && (
           <SettingsPanel
@@ -67,12 +85,14 @@ export default function GameCanvas({
               difficulty: state.difficulty,
               particles: state.particles,
               muted: state.muted,
+              highScore: state.highScore,
             }}
             actions={{
               setVolume: actions.setVolume,
               setDifficulty: actions.setDifficulty,
               setParticles: actions.setParticles,
               resetSettings: actions.resetSettings,
+              toggleMute: actions.toggleMute,
             }}
             onClose={() => setShowSettings(false)}
           />
