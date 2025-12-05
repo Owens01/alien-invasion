@@ -2,7 +2,11 @@
 
 import { SettingsPanelProps } from "../types/types";
 
-export default function SettingsPanel({ state, actions, onClose }: SettingsPanelProps) {
+export default function SettingsPanel({
+  state,
+  actions,
+  onClose,
+}: SettingsPanelProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/50">
       <div className="bg-slate-800 p-6 rounded-2xl shadow-2xl w-[320px] text-white border border-slate-700">
@@ -10,6 +14,13 @@ export default function SettingsPanel({ state, actions, onClose }: SettingsPanel
 
         {/* --- Game Controls --- */}
         <div className="space-y-3">
+          <div className="flex items-center justify-between bg-slate-700/50 p-2 rounded-lg border border-slate-600 mb-2">
+            <span className="text-yellow-400 font-bold">High Score</span>
+            <span className="text-yellow-400 font-mono text-lg">
+              {state.highScore}
+            </span>
+          </div>
+
           <label className="flex items-center justify-between">
             <span className="text-sm">Volume</span>
             <input
@@ -25,8 +36,8 @@ export default function SettingsPanel({ state, actions, onClose }: SettingsPanel
 
           <label className="flex items-center justify-between">
             <span className="text-sm">Difficulty</span>
-            <select 
-              value={state.difficulty} 
+            <select
+              value={state.difficulty}
               onChange={(e) => actions.setDifficulty(e.target.value)}
               className="bg-slate-700 rounded px-2 py-1 text-sm border border-slate-600 outline-none"
             >
@@ -38,10 +49,10 @@ export default function SettingsPanel({ state, actions, onClose }: SettingsPanel
 
           <label className="flex items-center justify-between cursor-pointer">
             <span className="text-sm">Particles</span>
-            <input 
-              type="checkbox" 
-              checked={state.particles} 
-              onChange={(e) => actions.setParticles(e.target.checked)} 
+            <input
+              type="checkbox"
+              checked={state.particles}
+              onChange={(e) => actions.setParticles(e.target.checked)}
               className="cursor-pointer"
             />
           </label>
@@ -50,32 +61,38 @@ export default function SettingsPanel({ state, actions, onClose }: SettingsPanel
               even though you will have main buttons for them on the right panel. */}
           <label className="flex items-center justify-between cursor-pointer">
             <span className="text-sm">Mute Music</span>
-            <input type="checkbox" checked={state.muted} onChange={() => actions.toggleMute()} className="cursor-pointer" />
+            <input
+              type="checkbox"
+              checked={state.muted}
+              onChange={() => actions.toggleMute()}
+              className="cursor-pointer"
+            />
           </label>
         </div>
 
         {/* --- How to Play Instructions --- */}
         <div className="mt-6 pt-4 border-t border-slate-600">
           <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
-          <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
-            How to Play
-          </h3>
-          <div className="text-slate-300 text-sm space-y-2">
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd>{" "}
-              <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd> Move
-            </p>
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd> Shoot
-            </p>
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause
-            </p>
-            <p>
-              <kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd> Settings
-            </p>
+            <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
+              How to Play
+            </h3>
+            <div className="text-slate-300 text-sm space-y-2">
+              <p>
+                <kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd>{" "}
+                <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd> Move
+              </p>
+              <p>
+                <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd>{" "}
+                Shoot
+              </p>
+              <p>
+                <kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause
+              </p>
+              <p>
+                <kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd> Settings
+              </p>
+            </div>
           </div>
-        </div>
         </div>
 
         {/* --- Action Buttons --- */}
@@ -83,16 +100,16 @@ export default function SettingsPanel({ state, actions, onClose }: SettingsPanel
           <button
             onClick={() => {
               actions.resetSettings();
-              // Optional: Keep panel open or close it on reset? 
+              // Optional: Keep panel open or close it on reset?
               // Usually reset doesn't close, but adhering to existing logic:
-              onClose(); 
+              onClose();
             }}
             className="px-4 py-2 rounded bg-red-600/80 hover:bg-red-600 text-sm transition-colors"
           >
             Reset
           </button>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="px-4 py-2 rounded bg-blue-600/80 hover:bg-blue-600 text-sm transition-colors"
           >
             Close
