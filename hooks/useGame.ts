@@ -48,7 +48,25 @@ export default function useGame(
   });
 
   const rafRef = useRef<number | null>(null);
-  const stateRef = useRef({ paused: false, gameStarted: false });
+
+  // Create a ref to hold all mutable game entities so we can reset them from outside the loop
+  const gameStateRef = useRef({
+    player: {
+      x: 240,
+      y: 540,
+      w: 48,
+      h: 20,
+      speed: config.playerSpeed,
+    } as Player,
+    bullets: [] as Bullet[],
+    enemies: [] as Enemy[],
+    enemyBullets: [] as Bullet[],
+    particles: [] as Particle[],
+    initialWaveSpawned: false,
+    paused: false,
+    gameStarted: false,
+    gameOver: false, // Internal game over flag for loop logic
+  });
 
   // Store settings and stats in refs so they don't trigger re-renders
   const settingsRef = useRef(settings);
@@ -66,6 +84,19 @@ export default function useGame(
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
+
+  // Sync ref state with React state
+  useEffect(() => {
+    gameStateRef.current.paused = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    gameStateRef.current.gameOver = gameOver;
+  }, [gameOver]);
+
+  useEffect(() => {
+    gameStateRef.current.gameStarted = gameStarted;
+  }, [gameStarted]);
 
   const inputRef = useRef(input);
   useEffect(() => {
@@ -90,7 +121,8 @@ export default function useGame(
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const dpr = window.devicePixelRatio || 1;
+
+    // Initialize player position on mount/resize if needed, but we do it in restart/init mostly
 
     console.log("🎬 useEffect running - initializing game");
 
@@ -103,24 +135,18 @@ export default function useGame(
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Keep player strictly within bounds on resize
+      const width = rect.width;
+      const height = rect.height;
+      const p = gameStateRef.current.player;
+      p.x = clamp(p.x, 0, width - p.w);
+      p.y = clamp(p.y, 0, height - p.h);
     }
 
     // Initial resize after next paint
     requestAnimationFrame(resize);
     window.addEventListener("resize", resize);
-
-    // --- Game objects ---
-    const player: Player = {
-      x: 240,
-      y: 540,
-      w: 48,
-      h: 20,
-      speed: config.playerSpeed,
-    };
-    const bullets: Bullet[] = [];
-    const enemies: Enemy[] = [];
-    const enemyBullets: Bullet[] = [];
-    const particles: Particle[] = [];
 
     function rand(min: number, max: number) {
       return min + Math.random() * (max - min);
@@ -144,7 +170,7 @@ export default function useGame(
       }
 
       for (let i = 0; i < n; i++) {
-        enemies.push({
+        gameStateRef.current.enemies.push({
           x: 40 + i * 70,
           y: 40,
           w: 36,
@@ -155,24 +181,23 @@ export default function useGame(
       }
     }
 
-    // Track if initial wave has been spawned
-    let initialWaveSpawned = false;
-
     let last = performance.now();
 
     function update(dt: number) {
+      const state = gameStateRef.current;
       const currentSettings = settingsRef.current;
       const currentStats = statsRef.current;
 
-      if (!stateRef.current.gameStarted || stateRef.current.paused) {
+      // Stop update if game not started, paused, OR game over
+      if (!state.gameStarted || state.paused || state.gameOver) {
         return;
       }
 
       // Spawn initial wave when game starts
-      if (!initialWaveSpawned) {
+      if (!state.initialWaveSpawned) {
         console.log("🎮 First update - spawning initial wave");
         spawnWave(6 * currentStats.wave);
-        initialWaveSpawned = true;
+        state.initialWaveSpawned = true;
       }
 
       // Difficulty scaling
@@ -194,22 +219,23 @@ export default function useGame(
       }
 
       const currentInput = inputRef.current;
-      const width = canvas!.width / dpr;
-      const height = canvas!.height / dpr;
+      const width = canvas!.width / (window.devicePixelRatio || 1);
+      const height = canvas!.height / (window.devicePixelRatio || 1);
 
       // Player movement
-      if (currentInput.left) player.x -= player.speed * dt;
-      if (currentInput.right) player.x += player.speed * dt;
-      if (currentInput.up) player.y -= player.speed * dt;
-      if (currentInput.down) player.y += player.speed * dt;
-      player.x = clamp(player.x, 0, width - player.w);
-      player.y = clamp(player.y, 0, height - player.h);
+      const p = state.player;
+      if (currentInput.left) p.x -= p.speed * dt;
+      if (currentInput.right) p.x += p.speed * dt;
+      if (currentInput.up) p.y -= p.speed * dt;
+      if (currentInput.down) p.y += p.speed * dt;
+      p.x = clamp(p.x, 0, width - p.w);
+      p.y = clamp(p.y, 0, height - p.h);
 
       // Player shooting
-      if (currentInput.shoot && bullets.length < config.maxBullets) {
-        bullets.push({
-          x: player.x + player.w / 2 - 3,
-          y: player.y - 10,
+      if (currentInput.shoot && state.bullets.length < config.maxBullets) {
+        state.bullets.push({
+          x: p.x + p.w / 2 - 3,
+          y: p.y - 10,
           vy: -500,
           w: 6,
           h: 10,
@@ -218,14 +244,14 @@ export default function useGame(
       }
 
       // Move bullets
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        bullets[i].y += bullets[i].vy * dt;
-        if (bullets[i].y < -20) bullets.splice(i, 1);
+      for (let i = state.bullets.length - 1; i >= 0; i--) {
+        state.bullets[i].y += state.bullets[i].vy * dt;
+        if (state.bullets[i].y < -20) state.bullets.splice(i, 1);
       }
 
       // Enemy movement & shooting
-      for (let ei = enemies.length - 1; ei >= 0; ei--) {
-        const e = enemies[ei];
+      for (let ei = state.enemies.length - 1; ei >= 0; ei--) {
+        const e = state.enemies[ei];
         e.x += e.vx * dt;
         if (e.x < 10) {
           e.x = 10;
@@ -238,7 +264,7 @@ export default function useGame(
         e.y += descentSpeed * dt;
         e.shootTimer -= dt;
         if (e.shootTimer <= 0) {
-          enemyBullets.push({
+          state.enemyBullets.push({
             x: e.x + e.w / 2 - 3,
             y: e.y + e.h + 4,
             vy: 180 + Math.random() * 120,
@@ -250,62 +276,70 @@ export default function useGame(
           e.shootTimer = rand(1, 3.5) / difficultyMultiplier;
         }
 
-        if (e.y + e.h >= player.y) {
-          enemies.splice(ei, 1);
+        if (e.y + e.h >= p.y) {
+          state.enemies.splice(ei, 1);
           if (!currentSettings.muted)
             playSound("explode", currentSettings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
-            if (newLives <= 0) setGameOver(true);
+            if (newLives <= 0) {
+              setGameOver(true);
+              state.gameOver = true; // Set internal flag immediately
+              return { ...s, lives: 0 }; // Ensure no negative lives
+            }
             return { ...s, lives: newLives };
           });
         }
       }
 
       // Enemy bullets hitting player
-      for (let i = enemyBullets.length - 1; i >= 0; i--) {
-        const b = enemyBullets[i];
+      for (let i = state.enemyBullets.length - 1; i >= 0; i--) {
+        const b = state.enemyBullets[i];
         b.y += b.vy * dt;
         if (b.y > height + 20) {
-          enemyBullets.splice(i, 1);
+          state.enemyBullets.splice(i, 1);
           continue;
         }
 
         const playerRect = {
-          x: player.x,
-          y: player.y,
-          w: player.w,
-          h: player.h,
+          x: p.x,
+          y: p.y,
+          w: p.w,
+          h: p.h,
         };
         if (detectCollisions(b, playerRect)) {
-          enemyBullets.splice(i, 1);
+          state.enemyBullets.splice(i, 1);
           if (!currentSettings.muted)
             playSound("explode", currentSettings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
-            if (newLives <= 0) setGameOver(true);
+            if (newLives <= 0) {
+              setGameOver(true);
+              state.gameOver = true; // Set internal flag immediately
+              return { ...s, lives: 0 }; // Ensure no negative lives
+            }
             return { ...s, lives: newLives };
           });
         }
       }
 
       // Player bullets hitting enemies
-      for (let i = bullets.length - 1; i >= 0; i--) {
-        for (let j = enemies.length - 1; j >= 0; j--) {
-          if (detectCollisions(bullets[i], enemies[j])) {
+      for (let i = state.bullets.length - 1; i >= 0; i--) {
+        for (let j = state.enemies.length - 1; j >= 0; j--) {
+          if (detectCollisions(state.bullets[i], state.enemies[j])) {
             if (currentSettings.particles) {
               for (let p = 0; p < 10; p++) {
-                particles.push({
-                  x: enemies[j].x + enemies[j].w / 2,
-                  y: enemies[j].y + enemies[j].h / 2,
+                state.particles.push({
+                  x: state.enemies[j].x + state.enemies[j].w / 2,
+                  y: state.enemies[j].y + state.enemies[j].h / 2,
                   vx: (Math.random() - 0.5) * 200,
                   vy: (Math.random() - 0.5) * 200,
                   life: 0.6,
                 });
               }
             }
-            bullets.splice(i, 1);
-            enemies.splice(j, 1);
+            state.bullets.splice(i, 1);
+            state.enemies.splice(j, 1);
             setStats((s) => {
               const newScore = s.score + 10;
               const newHighScore = Math.max(newScore, s.highScore);
@@ -319,16 +353,17 @@ export default function useGame(
       }
 
       // Particle updates
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vy += 300 * dt;
-        p.life -= dt;
-        if (p.life <= 0) particles.splice(i, 1);
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.vy += 300 * dt;
+        pt.life -= dt;
+        if (pt.life <= 0) state.particles.splice(i, 1);
       }
 
-      if (enemies.length === 0) {
+      // Wave completion
+      if (state.enemies.length === 0) {
         setStats((s) => ({ ...s, wave: s.wave + 1 }));
         const newWave = statsRef.current.wave + 1;
         spawnWave(6 + newWave);
@@ -337,24 +372,31 @@ export default function useGame(
 
     function draw() {
       if (!ctx || !canvas) return;
+      const state = gameStateRef.current;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = "#001018";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#9bd";
-      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillRect(
+        state.player.x,
+        state.player.y,
+        state.player.w,
+        state.player.h
+      );
 
       ctx.fillStyle = "#ffea00";
-      bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
+      state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
       ctx.fillStyle = "#ff4d4f";
-      enemies.forEach((e) => ctx.fillRect(e.x, e.y, e.w, e.h));
+      state.enemies.forEach((e) => ctx.fillRect(e.x, e.y, e.w, e.h));
 
       ctx.fillStyle = "#ff8c00";
-      enemyBullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
+      state.enemyBullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
       ctx.globalCompositeOperation = "lighter";
-      particles.forEach((p) => {
+      state.particles.forEach((p) => {
         ctx.fillStyle = `rgba(255,200,50,${Math.max(0, p.life)})`;
         ctx.fillRect(p.x, p.y, 3, 3);
       });
@@ -374,8 +416,9 @@ export default function useGame(
     // Pause key
     function onKey(e: KeyboardEvent) {
       if (["p", "P", "Escape"].includes(e.key)) {
-        stateRef.current.paused = !stateRef.current.paused;
-        setPaused((prev) => !prev);
+        if (!gameStateRef.current.gameOver) {
+          setPaused((prev) => !prev);
+        }
       }
     }
     window.addEventListener("keydown", onKey);
@@ -396,16 +439,18 @@ export default function useGame(
     toggleMute: () => setSettings((s) => ({ ...s, muted: !s.muted })),
     getMuted: () => settings.muted,
     togglePause: () => {
-      stateRef.current.paused = !stateRef.current.paused;
-      setPaused((p) => !p);
+      if (!gameOver) {
+        setPaused((p) => !p);
+      }
     },
     startGame: () => {
       console.log("🎮 START GAME CALLED");
-      stateRef.current.gameStarted = true;
       setGameStarted(true);
     },
     restart: () => {
       console.log("🔄 RESTART GAME");
+
+      // 1. Reset persisted stats
       setStats((s) => ({
         score: 0,
         lives: 3,
@@ -413,11 +458,29 @@ export default function useGame(
         highScores: s.highScores || [],
         highScore: s.highScore,
       }));
+
+      // 2. Clear all game entities in the ref
+      const state = gameStateRef.current;
+      state.bullets = [];
+      state.enemies = [];
+      state.enemyBullets = [];
+      state.particles = [];
+
+      // 3. Reset player position
+      state.player.x = 240;
+      state.player.y = 540;
+
+      // 4. Reset flags
+      state.initialWaveSpawned = false;
+      state.gameOver = false;
+      state.paused = false;
+      state.gameStarted = true;
+
+      // 5. Reset React state
       setGameOver(false);
       setPaused(false);
-      stateRef.current.paused = false;
-      stateRef.current.gameStarted = true;
       setGameStarted(true);
+
       playMusic("theme", settings.volume);
     },
     resetSettings: () =>
