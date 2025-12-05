@@ -6,66 +6,105 @@ import dynamic from "next/dynamic";
 import WelcomeScreen from "./WelcomeScreen";
 import GameControls from "./GameControls";
 import SettingsPanel from "./SettingsPanel";
-import useGame from "../hooks/useGame";
 
 // Client-only canvas
 const GameCanvas = dynamic(() => import("./GameCanvas"), { ssr: false });
+
+type GameActions = {
+  startGame: () => void;
+  setVolume: (v: number) => void;
+  setDifficulty: (d: string) => void;
+  setParticles: (b: boolean) => void;
+  resetSettings: () => void;
+  togglePause: () => void;
+  restart: () => void;
+  toggleMute: () => void;
+  getMuted: () => boolean;
+  toggleMusic: () => void;
+  getMusicMuted: () => boolean;
+};
+
+type GameState = {
+  volume: number;
+  difficulty: string;
+  particles: boolean;
+  muted: boolean;
+  score: number;
+  lives: number;
+  wave: number;
+  paused: boolean;
+  gameOver: boolean;
+  gameStarted: boolean;
+};
 
 export default function GamePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [showSettings, setShowSettings] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameActions, setGameActions] = useState<GameActions | null>(null);
 
-  // Hook provides state + actions
-  const { state, actions } = useGame(canvasRef);
+  // Callback to receive state and actions from GameCanvas
+  const handleGameReady = (state: GameState, actions: GameActions) => {
+    setGameState(state);
+    setGameActions(actions);
+  };
 
   // Handle start game
   const handleStartGame = () => {
     setHasStarted(true);
-    actions.startGame(); // ✅ starts the game loop
+    // Start the game loop using the actions from GameCanvas
+    gameActions?.startGame();
   };
 
-  if (!hasStarted) {
-    return <WelcomeScreen onStart={handleStartGame} />;
-  }
-
   return (
-    <main className="p-4 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
-        {/* LEFT/CENTER: Game Canvas */}
-        <div className="lg:col-span-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
-          <GameCanvas canvasRef={canvasRef} />
+    <>
+      {/* Welcome Screen - shown/hidden with CSS */}
+      {!hasStarted && <WelcomeScreen onStart={handleStartGame} />}
+
+      {/* Game UI - always mounted but hidden until game starts */}
+      <main
+        className="p-4 md:p-8"
+        style={{ display: hasStarted ? "block" : "none" }}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
+          {/* LEFT/CENTER: Game Canvas */}
+          <div className="lg:col-span-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
+            <GameCanvas canvasRef={canvasRef} onGameReady={handleGameReady} />
+          </div>
+
+          {/* RIGHT: Controls */}
+          {gameState && gameActions && (
+            <div className="space-y-4">
+              <GameControls
+                onOpenSettings={() => setShowSettings(true)}
+                actions={gameActions}
+                state={gameState}
+              />
+            </div>
+          )}
         </div>
 
-        {/* RIGHT: Controls */}
-        <div className="space-y-4">
-          <GameControls
-            onOpenSettings={() => setShowSettings(true)}
-            actions={actions}
-            state={state}
+        {/* Settings Panel */}
+        {showSettings && gameState && gameActions && (
+          <SettingsPanel
+            state={{
+              volume: gameState.volume,
+              difficulty: gameState.difficulty,
+              particles: gameState.particles,
+              muted: gameState.muted,
+            }}
+            actions={{
+              setVolume: gameActions.setVolume,
+              setDifficulty: gameActions.setDifficulty,
+              setParticles: gameActions.setParticles,
+              resetSettings: gameActions.resetSettings,
+            }}
+            onClose={() => setShowSettings(false)}
           />
-        </div>
-      </div>
-
-      {/* Settings Panel */}
-      {showSettings && (
-        <SettingsPanel
-          state={{
-            volume: state.volume,
-            difficulty: state.difficulty,
-            particles: state.particles,
-            muted: state.muted,
-          }}
-          actions={{
-            setVolume: actions.setVolume,
-            setDifficulty: actions.setDifficulty,
-            setParticles: actions.setParticles,
-            resetSettings: actions.resetSettings,
-          }}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
-    </main>
+        )}
+      </main>
+    </>
   );
 }

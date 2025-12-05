@@ -10,14 +10,29 @@ import PauseOverlay from "./PauseOverlay";
 
 type GameCanvasProps = {
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
+  onGameReady?: (state: any, actions: any) => void;
 };
 
-export default function GameCanvas({ canvasRef }: GameCanvasProps) {
+export default function GameCanvas({
+  canvasRef,
+  onGameReady,
+}: GameCanvasProps) {
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const ref = canvasRef ?? internalRef;
 
   const { state, actions } = useGame(ref);
   const [showSettings, setShowSettings] = useState(false);
+
+  // Track if we've already notified parent (to prevent infinite loop)
+  const hasNotifiedParent = useRef(false);
+
+  // Notify parent when game is ready (only once)
+  useEffect(() => {
+    if (onGameReady && !hasNotifiedParent.current) {
+      onGameReady(state, actions);
+      hasNotifiedParent.current = true;
+    }
+  }, [onGameReady]); // Only depend on onGameReady, not state/actions
 
   // Keyboard shortcuts
   useEffect(() => {
