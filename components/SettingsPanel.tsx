@@ -14,12 +14,7 @@ export default function SettingsPanel({
 
         {/* --- Game Controls --- */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between bg-slate-700/50 p-2 rounded-lg border border-slate-600 mb-2">
-            <span className="text-yellow-400 font-bold">High Score</span>
-            <span className="text-yellow-400 font-mono text-lg">
-              {state.highScore}
-            </span>
-          </div>
+          
 
           <label className="flex items-center justify-between">
             <span className="text-sm">Volume</span>
@@ -68,6 +63,12 @@ export default function SettingsPanel({
               className="cursor-pointer"
             />
           </label>
+          <div className="flex items-center justify-between bg-slate-700/50 p-2 rounded-lg border border-slate-600 mb-2">
+            <span className="text-yellow-400 font-bold">High Score</span>
+            <span className="text-yellow-400 font-mono text-lg">
+              {state.highScore}
+            </span>
+          </div>
         </div>
 
         {/* --- How to Play Instructions --- */}
