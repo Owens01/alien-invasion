@@ -60,7 +60,7 @@ export default function GameCanvas({
   return (
     <div className="w-full h-screen flex flex-col lg:flex-row gap-6 p-0 lg:p-4 max-w-[1600px] mx-auto">
       <div className="relative flex-1 w-full h-[80vh] sm:h-[80vh] lg:h-[90vh] bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl mx-auto">
-        <canvas ref={ref} className="w-full h-full block" />
+        <canvas ref={ref} className="w-full block" />
 
         <HUD
           state={{

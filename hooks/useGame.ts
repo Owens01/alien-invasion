@@ -57,12 +57,27 @@ export default function useGame(
   const rafRef = useRef<number | null>(null);
 
   // Create a ref to hold all mutable game entities so we can reset them from outside the loop
+  // Detect if screen is small (mobile)
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // Scale factor for small screens
+  const scaleFactor = isSmallScreen ? 0.7 : 1;
+
   const gameStateRef = useRef({
     player: {
       x: 240,
       y: 540,
-      w: 48,
-      h: 20,
+      w: 48 * scaleFactor,
+      h: 20 * scaleFactor,
       speed: config.playerSpeed,
     } as Player,
     bullets: [] as Bullet[],
@@ -73,7 +88,16 @@ export default function useGame(
     paused: false,
     gameStarted: false,
     gameOver: false, // Internal game over flag for loop logic
+    scaleFactor: scaleFactor, // Store scale factor in game state
   });
+
+  // Update scale factor when screen size changes
+  useEffect(() => {
+    gameStateRef.current.scaleFactor = scaleFactor;
+    // Update player size when scale changes
+    gameStateRef.current.player.w = 48 * scaleFactor;
+    gameStateRef.current.player.h = 20 * scaleFactor;
+  }, [scaleFactor]);
 
   // Store settings and stats in refs so they don't trigger re-renders
   const settingsRef = useRef(settings);
@@ -176,12 +200,13 @@ export default function useGame(
           break;
       }
 
+      const scale = gameStateRef.current.scaleFactor || 1;
       for (let i = 0; i < n; i++) {
         gameStateRef.current.enemies.push({
-          x: 40 + i * 70,
+          x: 40 + i * 70 * scale,
           y: 40,
-          w: 36,
-          h: 28,
+          w: 36 * scale,
+          h: 28 * scale,
           vx: (30 + Math.random() * 40) * (Math.random() < 0.5 ? 1 : -1),
           shootTimer: rand(1, 4) / difficultyMultiplier,
         });
@@ -481,9 +506,12 @@ export default function useGame(
         state.enemyBullets = [];
         state.particles = [];
 
-        // 3. Reset player position
+        // 3. Reset player position and size
+        const scale = state.scaleFactor || 1;
         state.player.x = 240;
         state.player.y = 540;
+        state.player.w = 48 * scale;
+        state.player.h = 20 * scale;
 
         // 4. Reset flags
         state.initialWaveSpawned = false;
