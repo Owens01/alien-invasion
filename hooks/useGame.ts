@@ -4,7 +4,7 @@ import useInput from "./useInput";
 import usePersistentState from "./usePersistentState";
 import config from "../data/config";
 
-import { useState, useEffect, useRef, RefObject } from "react";
+import { useState, useEffect, useRef, RefObject, useCallback } from "react";
 import { clamp } from "../utils/clamp";
 import { detectCollisions } from "../utils/collisions";
 import {
@@ -48,6 +48,19 @@ export default function useGame(
 
   const rafRef = useRef<number | null>(null);
   const stateRef = useRef({ paused: false, gameStarted: false });
+  
+  // Store settings and stats in refs so they don't trigger re-renders
+  const settingsRef = useRef(settings);
+  const statsRef = useRef(stats);
+  
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+  
+  useEffect(() => {
+    statsRef.current = stats;
+  }, [stats]);
+  
   const input = useInput();
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -78,6 +91,8 @@ export default function useGame(
     if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
 
+    console.log("🎬 useEffect running - initializing game");
+
     // --- Resize function to match parent exactly ---
     function resize() {
       if (!ctx || !canvas) return;
@@ -106,29 +121,27 @@ export default function useGame(
     const enemyBullets: Bullet[] = [];
     const particles: Particle[] = [];
 
-    // Difficulty scaling
-    let difficultyMultiplier = 1;
-    let descentSpeed = 6;
-    switch (settings.difficulty) {
-      case "easy":
-        difficultyMultiplier = 0.8;
-        descentSpeed = 4;
-        break;
-      case "normal":
-        difficultyMultiplier = 1;
-        descentSpeed = 6;
-        break;
-      case "hard":
-        difficultyMultiplier = 1.4;
-        descentSpeed = 10;
-        break;
-    }
-
     function rand(min: number, max: number) {
       return min + Math.random() * (max - min);
     }
     
     function spawnWave(n = 6) {
+      console.log("🚀 SPAWNING WAVE with", n, "enemies");
+      // Get difficulty from ref
+      const currentSettings = settingsRef.current;
+      let difficultyMultiplier = 1;
+      switch (currentSettings.difficulty) {
+        case "easy":
+          difficultyMultiplier = 0.8;
+          break;
+        case "normal":
+          difficultyMultiplier = 1;
+          break;
+        case "hard":
+          difficultyMultiplier = 1.4;
+          break;
+      }
+      
       for (let i = 0; i < n; i++) {
         enemies.push({
           x: 40 + i * 70,
@@ -141,20 +154,42 @@ export default function useGame(
       }
     }
 
-    // 🔥 FIX: Track if initial wave has been spawned
+    // Track if initial wave has been spawned
     let initialWaveSpawned = false;
 
-    const baseDescentSpeed = descentSpeed;
     let last = performance.now();
 
     function update(dt: number) {
-      if (!stateRef.current.gameStarted || stateRef.current.paused || gameOver)
+      const currentSettings = settingsRef.current;
+      const currentStats = statsRef.current;
+      
+      if (!stateRef.current.gameStarted || stateRef.current.paused) {
         return;
+      }
 
-      // 🔥 FIX: Spawn initial wave when game starts
+      // Spawn initial wave when game starts
       if (!initialWaveSpawned) {
-        spawnWave(6 * stats.wave);
+        console.log("🎮 First update - spawning initial wave");
+        spawnWave(6 * currentStats.wave);
         initialWaveSpawned = true;
+      }
+
+      // Difficulty scaling
+      let difficultyMultiplier = 1;
+      let descentSpeed = 6;
+      switch (currentSettings.difficulty) {
+        case "easy":
+          difficultyMultiplier = 0.8;
+          descentSpeed = 4;
+          break;
+        case "normal":
+          difficultyMultiplier = 1;
+          descentSpeed = 6;
+          break;
+        case "hard":
+          difficultyMultiplier = 1.4;
+          descentSpeed = 10;
+          break;
       }
 
       const currentInput = inputRef.current;
@@ -175,7 +210,7 @@ export default function useGame(
           w: 6,
           h: 10,
         });
-        if (!settings.muted) playSound("shoot", settings.volume);
+        if (!currentSettings.muted) playSound("shoot", currentSettings.volume);
       }
 
       // Move bullets
@@ -196,7 +231,7 @@ export default function useGame(
           e.vx *= -1;
         }
 
-        e.y += baseDescentSpeed * dt;
+        e.y += descentSpeed * dt;
         e.shootTimer -= dt;
         if (e.shootTimer <= 0) {
           enemyBullets.push({
@@ -206,13 +241,13 @@ export default function useGame(
             w: 6,
             h: 10,
           });
-          if (!settings.muted) playSound("shoot", settings.volume * 0.9);
+          if (!currentSettings.muted) playSound("shoot", currentSettings.volume * 0.9);
           e.shootTimer = rand(1, 3.5) / difficultyMultiplier;
         }
 
         if (e.y + e.h >= player.y) {
           enemies.splice(ei, 1);
-          if (!settings.muted) playSound("explode", settings.volume);
+          if (!currentSettings.muted) playSound("explode", currentSettings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
             if (newLives <= 0) setGameOver(true);
@@ -238,7 +273,7 @@ export default function useGame(
         };
         if (detectCollisions(b, playerRect)) {
           enemyBullets.splice(i, 1);
-          if (!settings.muted) playSound("explode", settings.volume);
+          if (!currentSettings.muted) playSound("explode", currentSettings.volume);
           setStats((s) => {
             const newLives = s.lives - 1;
             if (newLives <= 0) setGameOver(true);
@@ -251,7 +286,7 @@ export default function useGame(
       for (let i = bullets.length - 1; i >= 0; i--) {
         for (let j = enemies.length - 1; j >= 0; j--) {
           if (detectCollisions(bullets[i], enemies[j])) {
-            if (settings.particles) {
+            if (currentSettings.particles) {
               for (let p = 0; p < 10; p++) {
                 particles.push({
                   x: enemies[j].x + enemies[j].w / 2,
@@ -265,7 +300,7 @@ export default function useGame(
             bullets.splice(i, 1);
             enemies.splice(j, 1);
             setStats((s) => ({ ...s, score: s.score + 10 }));
-            if (!settings.muted) playSound("explode", settings.volume);
+            if (!currentSettings.muted) playSound("explode", currentSettings.volume);
             break;
           }
         }
@@ -281,9 +316,10 @@ export default function useGame(
         if (p.life <= 0) particles.splice(i, 1);
       }
 
-      if (enemies.length === 0 && !gameOver) {
+      if (enemies.length === 0) {
         setStats((s) => ({ ...s, wave: s.wave + 1 }));
-        spawnWave(6 + stats.wave);
+        const newWave = statsRef.current.wave + 1;
+        spawnWave(6 + newWave);
       }
     }
 
@@ -333,12 +369,13 @@ export default function useGame(
     window.addEventListener("keydown", onKey);
 
     return () => {
+      console.log("🛑 Cleaning up game loop");
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", onKey);
       stopMusic();
     };
-  }, [canvasRef, settings, stats.wave, gameOver, gameStarted, setStats]);
+  }, [canvasRef]); // ONLY canvasRef as dependency!
 
   const actions = {
     setVolume: (v: number) => setSettings((s) => ({ ...s, volume: v })),
@@ -351,6 +388,7 @@ export default function useGame(
       setPaused((p) => !p);
     },
     startGame: () => {
+      console.log("🎮 START GAME CALLED");
       stateRef.current.gameStarted = true;
       setGameStarted(true);
     },
