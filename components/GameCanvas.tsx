@@ -7,10 +7,11 @@ import useGame from "../hooks/useGame";
 import HUD from "./HUD";
 import SettingsPanel from "./SettingsPanel";
 import PauseOverlay from "./PauseOverlay";
+import { GameState, GameActions } from "../types/game";
 
 type GameCanvasProps = {
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
-  onGameReady?: (state: any, actions: any) => void;
+  onGameReady?: (state: GameState, actions: GameActions) => void;
 };
 
 export default function GameCanvas({
