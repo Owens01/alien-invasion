@@ -24,16 +24,12 @@ export default function GameCanvas({
   const { state, actions } = useGame(ref);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Track if we've already notified parent (to prevent infinite loop)
-  const hasNotifiedParent = useRef(false);
-
-  // Notify parent when game is ready (only once)
+  // Notify parent when game state changes
   useEffect(() => {
-    if (onGameReady && !hasNotifiedParent.current) {
+    if (onGameReady) {
       onGameReady(state, actions);
-      hasNotifiedParent.current = true;
     }
-  }, [onGameReady]); // Only depend on onGameReady, not state/actions
+  }, [onGameReady, state, actions]);
 
   // Keyboard shortcuts
   useEffect(() => {

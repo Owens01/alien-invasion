@@ -432,70 +432,85 @@ export default function useGame(
     };
   }, [canvasRef]); // ONLY canvasRef as dependency!
 
-  const actions = {
-    setVolume: (v: number) => setSettings((s) => ({ ...s, volume: v })),
-    setDifficulty: (d: string) => setSettings((s) => ({ ...s, difficulty: d })),
-    setParticles: (b: boolean) => setSettings((s) => ({ ...s, particles: b })),
-    toggleMute: () => setSettings((s) => ({ ...s, muted: !s.muted })),
-    getMuted: () => settings.muted,
-    togglePause: () => {
-      if (!gameOver) {
-        setPaused((p) => !p);
-      }
-    },
-    startGame: () => {
-      console.log("🎮 START GAME CALLED");
-      setGameStarted(true);
-    },
-    restart: () => {
-      console.log("🔄 RESTART GAME");
+  const actions = useMemo(
+    () => ({
+      setVolume: (v: number) => setSettings((s) => ({ ...s, volume: v })),
+      setDifficulty: (d: string) =>
+        setSettings((s) => ({ ...s, difficulty: d })),
+      setParticles: (b: boolean) =>
+        setSettings((s) => ({ ...s, particles: b })),
+      toggleMute: () => setSettings((s) => ({ ...s, muted: !s.muted })),
+      getMuted: () => settings.muted,
+      togglePause: () => {
+        if (!gameOver) {
+          setPaused((p) => !p);
+        }
+      },
+      setPauseState: (shouldPause: boolean) => {
+        if (!gameOver) {
+          setPaused(shouldPause);
+        }
+      },
+      startGame: () => {
+        console.log("🎮 START GAME CALLED");
+        setGameStarted(true);
+      },
+      restart: () => {
+        console.log("🔄 RESTART GAME");
 
-      // 1. Reset persisted stats
-      setStats((s) => ({
-        score: 0,
-        lives: 3,
-        wave: 1,
-        highScores: s.highScores || [],
-        highScore: s.highScore,
-      }));
+        // 1. Reset persisted stats
+        setStats((s) => ({
+          score: 0,
+          lives: 3,
+          wave: 1,
+          highScores: s.highScores || [],
+          highScore: s.highScore,
+        }));
 
-      // 2. Clear all game entities in the ref
-      const state = gameStateRef.current;
-      state.bullets = [];
-      state.enemies = [];
-      state.enemyBullets = [];
-      state.particles = [];
+        // 2. Clear all game entities in the ref
+        const state = gameStateRef.current;
+        state.bullets = [];
+        state.enemies = [];
+        state.enemyBullets = [];
+        state.particles = [];
 
-      // 3. Reset player position
-      state.player.x = 240;
-      state.player.y = 540;
+        // 3. Reset player position
+        state.player.x = 240;
+        state.player.y = 540;
 
-      // 4. Reset flags
-      state.initialWaveSpawned = false;
-      state.gameOver = false;
-      state.paused = false;
-      state.gameStarted = true;
+        // 4. Reset flags
+        state.initialWaveSpawned = false;
+        state.gameOver = false;
+        state.paused = false;
+        state.gameStarted = true;
 
-      // 5. Reset React state
-      setGameOver(false);
-      setPaused(false);
-      setGameStarted(true);
+        // 5. Reset React state
+        setGameOver(false);
+        setPaused(false);
+        setGameStarted(true);
 
-      playMusic("theme", settings.volume);
-    },
-    resetSettings: () =>
-      setSettings({
-        volume: 0.5,
-        difficulty: "normal",
-        particles: true,
-        muted: false,
-      }),
-    toggleMusic,
-    getMusicMuted,
-  };
+        playMusic("theme", settings.volume);
+      },
+      resetSettings: () =>
+        setSettings({
+          volume: 0.5,
+          difficulty: "normal",
+          particles: true,
+          muted: false,
+        }),
+      toggleMusic,
+      getMusicMuted,
+    }),
+    [gameOver, settings.muted, settings.volume]
+  ); // Add dependencies used inside actions
+
+  const state = useMemo(
+    () => ({ ...settings, ...stats, paused, gameOver, gameStarted }),
+    [settings, stats, paused, gameOver, gameStarted]
+  );
 
   return {
-    state: { ...settings, ...stats, paused, gameOver, gameStarted },
+    state,
     actions,
   };
 }

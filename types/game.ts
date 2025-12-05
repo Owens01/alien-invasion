@@ -5,6 +5,7 @@ export type GameActions = {
   setParticles: (b: boolean) => void;
   resetSettings: () => void;
   togglePause: () => void;
+  setPauseState: (paused: boolean) => void;
   restart: () => void;
   toggleMute: () => void;
   getMuted: () => boolean;

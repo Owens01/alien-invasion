@@ -53,7 +53,10 @@ export default function GamePage() {
           {gameState && gameActions && (
             <div className="space-y-4">
               <GameControls
-                onOpenSettings={() => setShowSettings(true)}
+                onOpenSettings={() => {
+                  gameActions.setPauseState(true);
+                  setShowSettings(true);
+                }}
                 actions={gameActions}
                 state={gameState}
               />
@@ -78,7 +81,10 @@ export default function GamePage() {
               resetSettings: gameActions.resetSettings,
               toggleMute: gameActions.toggleMute,
             }}
-            onClose={() => setShowSettings(false)}
+            onClose={() => {
+              gameActions.setPauseState(false);
+              setShowSettings(false);
+            }}
           />
         )}
       </main>
