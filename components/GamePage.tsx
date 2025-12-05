@@ -45,7 +45,7 @@ export default function GamePage() {
       <main className="p-2 md:p-8 h-screen w-screen overflow-hidden flex flex-col justify-center">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 lg:gap-4 max-w-7xl mx-auto w-full">
           {/* LEFT/CENTER: Game Canvas */}
-          <div className="lg:col-span-2 bg-slate-800 rounded-xl lg:rounded-2xl shadow-2xl border border-slate-700">
+          <div className="lg:col-span-2">
             <GameCanvas canvasRef={canvasRef} onGameReady={handleGameReady} />
           </div>
 
