@@ -4,7 +4,14 @@ import useInput from "./useInput";
 import usePersistentState from "./usePersistentState";
 import config from "../data/config";
 
-import { useState, useEffect, useRef, RefObject, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  RefObject,
+  useCallback,
+  useMemo,
+} from "react";
 import { clamp } from "../utils/clamp";
 import { detectCollisions } from "../utils/collisions";
 import {
@@ -501,7 +508,15 @@ export default function useGame(
       toggleMusic,
       getMusicMuted,
     }),
-    [gameOver, settings.muted, settings.volume]
+    [
+      gameOver,
+      settings.muted,
+      settings.volume,
+      setSettings,
+      setStats,
+      setPaused,
+      setGameStarted,
+    ]
   ); // Add dependencies used inside actions
 
   const state = useMemo(
