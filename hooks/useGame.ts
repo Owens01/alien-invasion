@@ -88,8 +88,8 @@ export default function useGame(
     player: {
       x: 240,
       y: 540,
-      w: 48 * scaleFactor,
-      h: 20 * scaleFactor,
+      w: 64 * scaleFactor,
+      h: 64 * scaleFactor,
       speed: config.playerSpeed,
     } as Player,
     bullets: [] as Bullet[],
@@ -101,6 +101,7 @@ export default function useGame(
     gameStarted: false,
     gameOver: false, // Internal game over flag for loop logic
     scaleFactor: scaleFactor, // Store scale factor in game state
+    lastShoot: false, // Track previous shoot state for trigger logic
   });
 
   // Refs for creature images
@@ -112,8 +113,8 @@ export default function useGame(
   useEffect(() => {
     gameStateRef.current.scaleFactor = scaleFactor;
     // Update player size when scale changes
-    gameStateRef.current.player.w = 48 * scaleFactor;
-    gameStateRef.current.player.h = 20 * scaleFactor;
+    gameStateRef.current.player.w = 64 * scaleFactor;
+    gameStateRef.current.player.h = 64 * scaleFactor;
   }, [scaleFactor]);
 
   // Store settings and stats in refs so they don't trigger re-renders
@@ -364,7 +365,12 @@ export default function useGame(
       p.y = clamp(p.y, 0, height - p.h);
 
       // Player shooting
-      if (currentInput.shoot && state.bullets.length < config.maxBullets) {
+      // Only shoot if button is pressed AND was not pressed last frame (trigger logic)
+      if (
+        currentInput.shoot &&
+        !gameStateRef.current.lastShoot &&
+        state.bullets.length < config.maxBullets
+      ) {
         state.bullets.push({
           x: p.x + p.w / 2 - 3,
           y: p.y - 10,
@@ -374,6 +380,9 @@ export default function useGame(
         });
         if (!currentSettings.muted) playSound("shoot", currentSettings.volume);
       }
+
+      // Update lastShoot state for next frame
+      state.lastShoot = currentInput.shoot;
 
       // Move bullets
       for (let i = state.bullets.length - 1; i >= 0; i--) {
@@ -626,7 +635,7 @@ export default function useGame(
           // Draw health number for big enemies if timer is active
           if (e.isBig && e.healthDisplayTimer > 0) {
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 20px Arial";
+            ctx.font = "bold 14px Arial";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(e.health.toString(), e.x + e.w / 2, e.y + e.h / 2);
@@ -724,8 +733,8 @@ export default function useGame(
         const scale = state.scaleFactor || 1;
         state.player.x = 240;
         state.player.y = 540;
-        state.player.w = 48 * scale;
-        state.player.h = 20 * scale;
+        state.player.w = 64 * scale;
+        state.player.h = 64 * scale;
 
         // 4. Reset flags
         state.initialWaveSpawned = false;
