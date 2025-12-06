@@ -22,7 +22,7 @@ export default function GameControls({
       className="
         bg-slate-800 
         rounded-2xl 
-        p-2 md:p-4 
+        p-2  
         shadow-lg 
         border border-slate-700
         max-w-50
@@ -33,7 +33,7 @@ export default function GameControls({
         Controls
       </h2>
 
-      <div className="grid grid-cols-2 md:grid-cols-1 gap-2 md:gap-3">
+      <div className="grid grid-cols-2 gap-2 md:gap-3">
         {/* PAUSE / RESUME */}
         <button
           onClick={actions.togglePause}
