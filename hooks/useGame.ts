@@ -46,7 +46,14 @@ type Enemy = {
   isBig: boolean;
   healthDisplayTimer: number;
 };
-type Particle = { x: number; y: number; vx: number; vy: number; life: number };
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  color?: string;
+};
 
 export default function useGame(
   canvasRef: RefObject<HTMLCanvasElement | null>
@@ -102,11 +109,13 @@ export default function useGame(
     gameOver: false, // Internal game over flag for loop logic
     scaleFactor: scaleFactor, // Store scale factor in game state
     lastShoot: false, // Track previous shoot state for trigger logic
+    shake: 0, // Screen shake intensity
+    activeCreatureType: 0, // Track current enemy type for background theming
   });
 
-  // Refs for creature images
   const creatureImages = useRef<HTMLImageElement[]>([]);
   const playerShipImage = useRef<HTMLImageElement | null>(null);
+  const backgroundImages = useRef<HTMLImageElement[]>([]);
   const imagesLoaded = useRef(false);
 
   // Update scale factor when screen size changes
@@ -192,14 +201,12 @@ export default function useGame(
           };
           img.onerror = () => {
             console.warn(`Failed to load ${src}`);
-            resolve(); // Still resolve to not block other images
-          };
           img.src = src;
         });
       });
 
       // Load player ship
-      const playerShipPromise = new Promise<void>((resolve) => {
+      const playerPromise = new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => {
           playerShipImage.current = img;
@@ -212,9 +219,34 @@ export default function useGame(
         img.src = "/player-ship.png";
       });
 
-      Promise.all([...creaturePromises, playerShipPromise]).then(() => {
+      // Load backgrounds
+      const bgPromises = [
+        "/bg_creature_0.png",
+        "/bg_creature_1.png",
+        "/bg_creature_2.png",
+        "/bg_creature_3.png",
+      ].map((src, index) => {
+        return new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            backgroundImages.current[index] = img;
+            resolve();
+          };
+          img.onerror = () => {
+            console.warn(`Failed to load ${src}`);
+            resolve();
+          };
+          img.src = src;
+        });
+      });
+
+      Promise.all([
+        ...creaturePromises, 
+        playerPromise,
+        ...bgPromises
+      ]).then(() => {
         imagesLoaded.current = true;
-        console.log("✅ All images loaded (creatures + player ship)");
+        console.log("✅ All images loaded");
       });
     };
 
@@ -231,8 +263,6 @@ export default function useGame(
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       // Keep player strictly within bounds on resize
-      const width = rect.width;
-      const height = rect.height;
       const p = gameStateRef.current.player;
       p.x = clamp(p.x, 0, width - p.w);
       p.y = clamp(p.y, 0, height - p.h);
@@ -282,6 +312,8 @@ export default function useGame(
       } else {
         creatureType = 0; // Octopus-like
       }
+      
+      gameStateRef.current.activeCreatureType = creatureType;
 
       // Determine which enemies will be big
       // Number of big enemies = wave number (wave 1 = 1 big, wave 2 = 2 big, etc.)
@@ -324,6 +356,12 @@ export default function useGame(
       // Stop update if game not started, paused, OR game over
       if (!state.gameStarted || state.paused || state.gameOver) {
         return;
+      }
+
+      // Decay screen shake
+      if (state.shake > 0) {
+        state.shake *= 0.9;
+        if (state.shake < 0.5) state.shake = 0;
       }
 
       // Spawn initial wave when game starts
@@ -378,7 +416,8 @@ export default function useGame(
           w: 6,
           h: 10,
         });
-        if (!currentSettings.muted) playSound("shoot", currentSettings.volume);
+        if (!currentSettings.muted)
+          playSound("playerShoot", currentSettings.volume);
       }
 
       // Update lastShoot state for next frame
@@ -423,7 +462,7 @@ export default function useGame(
             isBig: isBig,
           });
           if (!currentSettings.muted)
-            playSound("shoot", currentSettings.volume * 0.9);
+            playSound("enemyShoot", currentSettings.volume * 0.9);
           e.shootTimer = rand(1, 3.5) / difficultyMultiplier;
         }
 
@@ -431,6 +470,8 @@ export default function useGame(
           state.enemies.splice(ei, 1);
           if (!currentSettings.muted)
             playSound("explode", currentSettings.volume);
+          // Screen shake on player hit
+          state.shake = 20;
           setStats((s) => {
             const newLives = s.lives - 1;
             if (newLives <= 0) {
@@ -462,6 +503,8 @@ export default function useGame(
           state.enemyBullets.splice(i, 1);
           if (!currentSettings.muted)
             playSound("explode", currentSettings.volume);
+          // Screen shake on player hit by bullet
+          state.shake = 20;
           setStats((s) => {
             const newLives = s.lives - 1;
             if (newLives <= 0) {
@@ -497,6 +540,7 @@ export default function useGame(
                   vx: (Math.random() - 0.5) * 200,
                   vy: (Math.random() - 0.5) * 200,
                   life: 0.6,
+                  color: enemy.isBig ? "#ff00ff" : "#ffea00", // Different colors for big enemies
                 });
               }
             }
@@ -511,6 +555,23 @@ export default function useGame(
             // Only destroy enemy if health reaches 0
             if (enemy.health <= 0) {
               state.enemies.splice(j, 1);
+              // Screen shake on enemy destruction
+              state.shake = enemy.isBig ? 15 : 5;
+
+              // More particles for destruction
+              if (currentSettings.particles) {
+                for (let p = 0; p < 15; p++) {
+                  state.particles.push({
+                    x: enemy.x + enemy.w / 2,
+                    y: enemy.y + enemy.h / 2,
+                    vx: (Math.random() - 0.5) * 300,
+                    vy: (Math.random() - 0.5) * 300,
+                    life: 0.8,
+                    color: "#ff4d4f",
+                  });
+                }
+              }
+
               // Award points based on enemy type
               const points = enemy.isBig ? 30 : 10;
               setStats((s) => {
@@ -544,12 +605,13 @@ export default function useGame(
     }
 
     function draw() {
-      if (!ctx || !canvas) return;
-      const state = gameStateRef.current;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#001018";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      // Apply screen shake
+      if (state.shake > 0) {
+        const dx = (Math.random() - 0.5) * state.shake;
+        const dy = (Math.random() - 0.5) * state.shake;
+        ctx.translate(dx, dy);
+      }
 
       // Draw player ship
       if (imagesLoaded.current && playerShipImage.current) {
@@ -557,41 +619,6 @@ export default function useGame(
         const imgAspect = img.width / img.height;
         const boundsAspect = state.player.w / state.player.h;
 
-        let drawWidth = state.player.w;
-        let drawHeight = state.player.h;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        // Fit image to bounds while maintaining aspect ratio
-        if (imgAspect > boundsAspect) {
-          // Image is wider - fit to width
-          drawHeight = state.player.w / imgAspect;
-          offsetY = (state.player.h - drawHeight) / 2;
-        } else {
-          // Image is taller - fit to height
-          drawWidth = state.player.h * imgAspect;
-          offsetX = (state.player.w - drawWidth) / 2;
-        }
-
-        ctx.drawImage(
-          img,
-          state.player.x + offsetX,
-          state.player.y + offsetY,
-          drawWidth,
-          drawHeight
-        );
-      } else {
-        // Fallback to rectangle if image not loaded
-        ctx.fillStyle = "#9bd";
-        ctx.fillRect(
-          state.player.x,
-          state.player.y,
-          state.player.w,
-          state.player.h
-        );
-      }
-
-      ctx.fillStyle = "#ffea00";
       state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
       // Draw enemies with creature images
@@ -652,10 +679,15 @@ export default function useGame(
 
       ctx.globalCompositeOperation = "lighter";
       state.particles.forEach((p) => {
-        ctx.fillStyle = `rgba(255,200,50,${Math.max(0, p.life)})`;
+        ctx.fillStyle = p.color || `rgba(255,200,50,${Math.max(0, p.life)})`;
+        // Scale opacity by life
+        ctx.globalAlpha = Math.max(0, p.life);
         ctx.fillRect(p.x, p.y, 3, 3);
       });
+      ctx.globalAlpha = 1.0;
       ctx.globalCompositeOperation = "source-over";
+
+      ctx.restore(); // Restore context after shake
     }
 
     function loop(now = performance.now()) {
