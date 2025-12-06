@@ -14,8 +14,6 @@ export default function SettingsPanel({
 
         {/* --- Game Controls --- */}
         <div className="space-y-3">
-          
-
           <label className="flex items-center justify-between">
             <span className="text-sm">Volume</span>
             <input
@@ -77,21 +75,52 @@ export default function SettingsPanel({
             <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
               How to Play
             </h3>
-            <div className="text-slate-300 text-sm space-y-2">
-              <p>
-                <kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd>{" "}
-                <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd> Move
-              </p>
-              <p>
-                <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd>{" "}
-                Shoot
-              </p>
-              <p>
-                <kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause
-              </p>
-              <p>
-                <kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd> Settings
-              </p>
+
+            {/* Desktop Controls */}
+            <div className="mb-4">
+              <h4 className="text-slate-400 font-medium text-xs uppercase mb-2">
+                🖥️ Desktop Controls
+              </h4>
+              <div className="text-slate-300 text-sm space-y-2">
+                <p>
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">←</kbd>{" "}
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">→</kbd>{" "}
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">↑</kbd>{" "}
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">↓</kbd> or{" "}
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">WASD</kbd>{" "}
+                  Move
+                </p>
+                <p>
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd>{" "}
+                  Shoot
+                </p>
+                <p>
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">P</kbd> Pause
+                </p>
+                <p>
+                  <kbd className="bg-slate-700 px-2 py-1 rounded">S</kbd>{" "}
+                  Settings
+                </p>
+              </div>
+            </div>
+
+            {/* Mobile Controls */}
+            <div>
+              <h4 className="text-slate-400 font-medium text-xs uppercase mb-2">
+                📱 Mobile Controls
+              </h4>
+              <div className="text-slate-300 text-sm space-y-2">
+                <p>
+                  <span className="bg-slate-700 px-2 py-1 rounded">
+                    Touch & Hold
+                  </span>{" "}
+                  Move in any direction
+                </p>
+                <p>
+                  <span className="bg-slate-700 px-2 py-1 rounded">Tap</span>{" "}
+                  Shoot
+                </p>
+              </div>
             </div>
           </div>
         </div>
