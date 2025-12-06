@@ -27,13 +27,10 @@ export default function GameControls({
         p-2  
         shadow-lg 
         border border-slate-700
-        max-w-50
-        
+        max-w-80
+        max-sm:m-auto
       "
     >
-      <h2 className="font-bold text-xl mb-4 text-white hidden md:block">
-        Controls
-      </h2>
 
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         {/* PAUSE / RESUME */}
@@ -65,7 +62,7 @@ export default function GameControls({
             transition-colors
           "
         >
-          HOW TO PLAY
+          Controls
         </button>
 
         {/* SETTINGS */}

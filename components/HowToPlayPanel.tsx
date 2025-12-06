@@ -10,7 +10,7 @@ export default function HowToPlayPanel({ onClose }: HowToPlayPanelProps) {
       <div className="bg-slate-800 p-6 rounded-2xl shadow-2xl w-[320px] text-white border border-slate-700">
         <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
           <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
-            How to Play
+             Controls
           </h3>
 
           {/* Desktop Controls */}
