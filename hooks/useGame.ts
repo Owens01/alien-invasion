@@ -200,7 +200,8 @@ export default function useGame(
             resolve();
           };
           img.onerror = () => {
-            console.warn(`Failed to load ${src}`);
+            resolve();
+          };
           img.src = src;
         });
       });
@@ -240,14 +241,12 @@ export default function useGame(
         });
       });
 
-      Promise.all([
-        ...creaturePromises, 
-        playerPromise,
-        ...bgPromises
-      ]).then(() => {
-        imagesLoaded.current = true;
-        console.log("✅ All images loaded");
-      });
+      Promise.all([...creaturePromises, playerPromise, ...bgPromises]).then(
+        () => {
+          imagesLoaded.current = true;
+          console.log("✅ All images loaded");
+        }
+      );
     };
 
     loadImages();
@@ -264,8 +263,8 @@ export default function useGame(
 
       // Keep player strictly within bounds on resize
       const p = gameStateRef.current.player;
-      p.x = clamp(p.x, 0, width - p.w);
-      p.y = clamp(p.y, 0, height - p.h);
+      p.x = clamp(p.x, 0, rect.width - p.w);
+      p.y = clamp(p.y, 0, rect.height - p.h);
     }
 
     // Initial resize after next paint
@@ -312,7 +311,7 @@ export default function useGame(
       } else {
         creatureType = 0; // Octopus-like
       }
-      
+
       gameStateRef.current.activeCreatureType = creatureType;
 
       // Determine which enemies will be big
@@ -605,6 +604,8 @@ export default function useGame(
     }
 
     function draw() {
+      if (!ctx) return;
+      const state = gameStateRef.current;
       ctx.save();
       // Apply screen shake
       if (state.shake > 0) {
@@ -618,6 +619,36 @@ export default function useGame(
         const img = playerShipImage.current;
         const imgAspect = img.width / img.height;
         const boundsAspect = state.player.w / state.player.h;
+
+        let drawWidth = state.player.w;
+        let drawHeight = state.player.h;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (imgAspect > boundsAspect) {
+          drawHeight = state.player.w / imgAspect;
+          offsetY = (state.player.h - drawHeight) / 2;
+        } else {
+          drawWidth = state.player.h * imgAspect;
+          offsetX = (state.player.w - drawWidth) / 2;
+        }
+
+        ctx.drawImage(
+          img,
+          state.player.x + offsetX,
+          state.player.y + offsetY,
+          drawWidth,
+          drawHeight
+        );
+      } else {
+        ctx.fillStyle = "#00ff00";
+        ctx.fillRect(
+          state.player.x,
+          state.player.y,
+          state.player.w,
+          state.player.h
+        );
+      }
 
       state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
