@@ -4,6 +4,7 @@ import React from "react";
 
 type GameControlsProps = {
   onOpenSettings: () => void;
+  onOpenHowToPlay: () => void;
   actions: {
     togglePause: () => void;
   };
@@ -14,6 +15,7 @@ type GameControlsProps = {
 
 export default function GameControls({
   onOpenSettings,
+  onOpenHowToPlay,
   actions,
   state,
 }: GameControlsProps) {
@@ -33,7 +35,7 @@ export default function GameControls({
         Controls
       </h2>
 
-      <div className="grid grid-cols-2 gap-2 md:gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         {/* PAUSE / RESUME */}
         <button
           onClick={actions.togglePause}
@@ -47,6 +49,23 @@ export default function GameControls({
           `}
         >
           {state.paused ? "RESUME" : "PAUSE"}
+        </button>
+
+        {/* HOW TO PLAY */}
+        <button
+          onClick={onOpenHowToPlay}
+          className="
+            w-full py-2 md:py-3 
+            rounded-lg 
+            bg-purple-600 
+            hover:bg-purple-500 
+            text-white 
+            font-bold 
+            text-sm md:text-base
+            transition-colors
+          "
+        >
+          HOW TO PLAY
         </button>
 
         {/* SETTINGS */}

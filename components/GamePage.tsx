@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import WelcomeScreen from "./WelcomeScreen";
 import GameControls from "./GameControls";
 import SettingsPanel from "./SettingsPanel";
+import HowToPlayPanel from "./HowToPlayPanel";
 import { GameState, GameActions } from "../types/game";
 
 // Client-only canvas
@@ -15,6 +16,7 @@ export default function GamePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [gameActions, setGameActions] = useState<GameActions | null>(null);
@@ -57,6 +59,10 @@ export default function GamePage() {
                   gameActions.setPauseState(true);
                   setShowSettings(true);
                 }}
+                onOpenHowToPlay={() => {
+                  gameActions.setPauseState(true);
+                  setShowHowToPlay(true);
+                }}
                 actions={gameActions}
                 state={gameState}
               />
@@ -84,6 +90,16 @@ export default function GamePage() {
             onClose={() => {
               gameActions.setPauseState(false);
               setShowSettings(false);
+            }}
+          />
+        )}
+
+        {/* How to Play Panel */}
+        {showHowToPlay && gameActions && (
+          <HowToPlayPanel
+            onClose={() => {
+              gameActions.setPauseState(false);
+              setShowHowToPlay(false);
             }}
           />
         )}
