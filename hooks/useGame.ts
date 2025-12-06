@@ -25,7 +25,14 @@ import {
 } from "../utils/audio";
 
 type Player = { x: number; y: number; w: number; h: number; speed: number };
-type Bullet = { x: number; y: number; w: number; h: number; vy: number };
+type Bullet = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  vy: number;
+  isBig?: boolean;
+};
 type Enemy = {
   x: number;
   y: number;
@@ -34,6 +41,10 @@ type Enemy = {
   vx: number;
   shootTimer: number;
   creatureType: number;
+  health: number;
+  maxHealth: number;
+  isBig: boolean;
+  healthDisplayTimer: number;
 };
 type Particle = { x: number; y: number; vx: number; vy: number; life: number };
 
@@ -239,15 +250,20 @@ export default function useGame(
       // Get difficulty from ref
       const currentSettings = settingsRef.current;
       let difficultyMultiplier = 1;
+      let bigEnemyHealth = 3; // Default for easy
+
       switch (currentSettings.difficulty) {
         case "easy":
           difficultyMultiplier = 0.8;
+          bigEnemyHealth = 3;
           break;
         case "normal":
           difficultyMultiplier = 1;
+          bigEnemyHealth = 6;
           break;
         case "hard":
           difficultyMultiplier = 1.4;
+          bigEnemyHealth = 9;
           break;
       }
 
@@ -266,15 +282,33 @@ export default function useGame(
         creatureType = 0; // Octopus-like
       }
 
+      // Determine which enemies will be big
+      // Number of big enemies = wave number (wave 1 = 1 big, wave 2 = 2 big, etc.)
+      const numBigEnemies = Math.min(currentWave, n);
+      const bigEnemyIndices = new Set<number>();
+
+      // Randomly select which enemies will be big
+      while (bigEnemyIndices.size < numBigEnemies) {
+        bigEnemyIndices.add(Math.floor(Math.random() * n));
+      }
+
       for (let i = 0; i < n; i++) {
+        const isBig = bigEnemyIndices.has(i);
+        const sizeMultiplier = isBig ? 1.8 : 1;
+        const health = isBig ? bigEnemyHealth : 1;
+
         gameStateRef.current.enemies.push({
           x: 40 + i * 70 * scale,
           y: 40,
-          w: 36 * scale,
-          h: 28 * scale,
+          w: 36 * scale * sizeMultiplier,
+          h: 28 * scale * sizeMultiplier,
           vx: (30 + Math.random() * 40) * (Math.random() < 0.5 ? 1 : -1),
           shootTimer: rand(1, 4) / difficultyMultiplier,
           creatureType: creatureType,
+          health: health,
+          maxHealth: health,
+          isBig: isBig,
+          healthDisplayTimer: 0,
         });
       }
     }
@@ -359,15 +393,25 @@ export default function useGame(
           e.vx *= -1;
         }
 
+        // Decrease health display timer
+        if (e.healthDisplayTimer > 0) {
+          e.healthDisplayTimer -= dt;
+        }
+
         e.y += descentSpeed * dt;
         e.shootTimer -= dt;
         if (e.shootTimer <= 0) {
+          const isBig = e.isBig;
+          const bulletW = isBig ? 12 : 6;
+          const bulletH = isBig ? 20 : 10;
+
           state.enemyBullets.push({
-            x: e.x + e.w / 2 - 3,
+            x: e.x + e.w / 2 - bulletW / 2,
             y: e.y + e.h + 4,
             vy: 180 + Math.random() * 120,
-            w: 6,
-            h: 10,
+            w: bulletW,
+            h: bulletH,
+            isBig: isBig,
           });
           if (!currentSettings.muted)
             playSound("shoot", currentSettings.volume * 0.9);
@@ -425,26 +469,48 @@ export default function useGame(
       for (let i = state.bullets.length - 1; i >= 0; i--) {
         for (let j = state.enemies.length - 1; j >= 0; j--) {
           if (detectCollisions(state.bullets[i], state.enemies[j])) {
+            const enemy = state.enemies[j];
+
+            // Reduce enemy health
+            enemy.health -= 1;
+
+            // Show health display for big enemies
+            if (enemy.isBig) {
+              enemy.healthDisplayTimer = 2.0; // Show for 2 seconds
+            }
+
+            // Create particles on hit
             if (currentSettings.particles) {
               for (let p = 0; p < 10; p++) {
                 state.particles.push({
-                  x: state.enemies[j].x + state.enemies[j].w / 2,
-                  y: state.enemies[j].y + state.enemies[j].h / 2,
+                  x: enemy.x + enemy.w / 2,
+                  y: enemy.y + enemy.h / 2,
                   vx: (Math.random() - 0.5) * 200,
                   vy: (Math.random() - 0.5) * 200,
                   life: 0.6,
                 });
               }
             }
+
+            // Remove bullet
             state.bullets.splice(i, 1);
-            state.enemies.splice(j, 1);
-            setStats((s) => {
-              const newScore = s.score + 10;
-              const newHighScore = Math.max(newScore, s.highScore);
-              return { ...s, score: newScore, highScore: newHighScore };
-            });
+
+            // Play sound on hit
             if (!currentSettings.muted)
               playSound("explode", currentSettings.volume);
+
+            // Only destroy enemy if health reaches 0
+            if (enemy.health <= 0) {
+              state.enemies.splice(j, 1);
+              // Award points based on enemy type
+              const points = enemy.isBig ? 30 : 10;
+              setStats((s) => {
+                const newScore = s.score + points;
+                const newHighScore = Math.max(newScore, s.highScore);
+                return { ...s, score: newScore, highScore: newHighScore };
+              });
+            }
+
             break;
           }
         }
@@ -543,6 +609,10 @@ export default function useGame(
             offsetX = (e.w - drawWidth) / 2;
           }
 
+          // Visual feedback for damaged enemies
+          const healthPercent = e.health / e.maxHealth;
+          ctx.globalAlpha = 0.3 + healthPercent * 0.7; // Range from 0.3 to 1.0
+
           ctx.drawImage(
             img,
             e.x + offsetX,
@@ -550,6 +620,17 @@ export default function useGame(
             drawWidth,
             drawHeight
           );
+
+          ctx.globalAlpha = 1.0; // Reset alpha
+
+          // Draw health number for big enemies if timer is active
+          if (e.isBig && e.healthDisplayTimer > 0) {
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 20px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(e.health.toString(), e.x + e.w / 2, e.y + e.h / 2);
+          }
         } else {
           // Fallback to rectangle if images not loaded
           ctx.fillStyle = "#ff4d4f";
