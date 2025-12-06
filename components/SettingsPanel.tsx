@@ -8,7 +8,7 @@ export default function SettingsPanel({
   onClose,
 }: SettingsPanelProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/50">
+    <div className="absolute h-full inset-0 flex items-center justify-center z-50 bg-black/50">
       <div className="bg-slate-800 p-6 rounded-2xl shadow-2xl w-[320px] text-white border border-slate-700">
         <h3 className="text-xl font-bold mb-4 text-center">Settings</h3>
 
@@ -61,23 +61,23 @@ export default function SettingsPanel({
               className="cursor-pointer"
             />
           </label>
-          <div className="flex items-center justify-between bg-slate-700/50 p-1 rounded-lg border border-slate-600 mb-2">
+          <div className="flex items-center justify-between">
             <span className="text-sm">High Score</span>
-            <span className="text-yellow-400 font-mono text-lg">
+            <span className="text-yellow-400 font-mono text-lg p-1 bg-slate-700/50 rounded-lg border border-slate-600">
               {state.highScore}
             </span>
           </div>
         </div>
 
         {/* --- How to Play Instructions --- */}
-        <div className="mt-6 pt-4 border-t border-slate-600">
+        <div className="mt-3 pt-3 border-t border-slate-600">
           <div className="bg-slate-800 p-4 rounded-xl shadow-lg border border-slate-700">
             <h3 className="text-white font-semibold text-lg border-b border-slate-600 pb-2 mb-3">
               How to Play
             </h3>
 
             {/* Desktop Controls */}
-            <div className="mb-4">
+            <div className="mb-3">
               <h4 className="text-slate-400 font-medium text-xs uppercase mb-2">
                 🖥️ Desktop Controls
               </h4>
@@ -88,7 +88,7 @@ export default function SettingsPanel({
                   <kbd className="bg-slate-700 px-2 py-1 rounded">↑</kbd>{" "}
                   <kbd className="bg-slate-700 px-2 py-1 rounded">↓</kbd> or{" "}
                   <kbd className="bg-slate-700 px-2 py-1 rounded">WASD</kbd>{" "}
-                  Move
+                  Move 
                 </p>
                 <p>
                   <kbd className="bg-slate-700 px-2 py-1 rounded">Space</kbd>{" "}

@@ -25,7 +25,8 @@ export default function GameControls({
         p-2 md:p-4 
         shadow-lg 
         border border-slate-700
-        w-full
+        max-w-50
+        
       "
     >
       <h2 className="font-bold text-xl mb-4 text-white hidden md:block">
