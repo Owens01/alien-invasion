@@ -94,6 +94,7 @@ export default function useGame(
 
   // Refs for creature images
   const creatureImages = useRef<HTMLImageElement[]>([]);
+  const playerShipImage = useRef<HTMLImageElement | null>(null);
   const imagesLoaded = useRef(false);
 
   // Update scale factor when screen size changes
@@ -162,10 +163,10 @@ export default function useGame(
 
     console.log("🎬 useEffect running - initializing game");
 
-    // Load creature images
+    // Load creature images and player ship
 
     const loadImages = () => {
-      const imagePromises = [
+      const creaturePromises = [
         "/creature1.png",
         "/creature2.png",
         "/creature3.png",
@@ -185,9 +186,23 @@ export default function useGame(
         });
       });
 
-      Promise.all(imagePromises).then(() => {
+      // Load player ship
+      const playerShipPromise = new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          playerShipImage.current = img;
+          resolve();
+        };
+        img.onerror = () => {
+          console.warn("Failed to load player ship");
+          resolve();
+        };
+        img.src = "/player-ship.png";
+      });
+
+      Promise.all([...creaturePromises, playerShipPromise]).then(() => {
         imagesLoaded.current = true;
-        console.log("✅ All creature images loaded");
+        console.log("✅ All images loaded (creatures + player ship)");
       });
     };
 
@@ -461,13 +476,45 @@ export default function useGame(
       ctx.fillStyle = "#001018";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "#9bd";
-      ctx.fillRect(
-        state.player.x,
-        state.player.y,
-        state.player.w,
-        state.player.h
-      );
+      // Draw player ship
+      if (imagesLoaded.current && playerShipImage.current) {
+        const img = playerShipImage.current;
+        const imgAspect = img.width / img.height;
+        const boundsAspect = state.player.w / state.player.h;
+
+        let drawWidth = state.player.w;
+        let drawHeight = state.player.h;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        // Fit image to bounds while maintaining aspect ratio
+        if (imgAspect > boundsAspect) {
+          // Image is wider - fit to width
+          drawHeight = state.player.w / imgAspect;
+          offsetY = (state.player.h - drawHeight) / 2;
+        } else {
+          // Image is taller - fit to height
+          drawWidth = state.player.h * imgAspect;
+          offsetX = (state.player.w - drawWidth) / 2;
+        }
+
+        ctx.drawImage(
+          img,
+          state.player.x + offsetX,
+          state.player.y + offsetY,
+          drawWidth,
+          drawHeight
+        );
+      } else {
+        // Fallback to rectangle if image not loaded
+        ctx.fillStyle = "#9bd";
+        ctx.fillRect(
+          state.player.x,
+          state.player.y,
+          state.player.w,
+          state.player.h
+        );
+      }
 
       ctx.fillStyle = "#ffea00";
       state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
@@ -476,7 +523,33 @@ export default function useGame(
       state.enemies.forEach((e) => {
         if (imagesLoaded.current && creatureImages.current[e.creatureType]) {
           const img = creatureImages.current[e.creatureType];
-          ctx.drawImage(img, e.x, e.y, e.w, e.h);
+          // Draw image centered within enemy bounds, preserving aspect ratio
+          const imgAspect = img.width / img.height;
+          const boundsAspect = e.w / e.h;
+
+          let drawWidth = e.w;
+          let drawHeight = e.h;
+          let offsetX = 0;
+          let offsetY = 0;
+
+          // Fit image to bounds while maintaining aspect ratio
+          if (imgAspect > boundsAspect) {
+            // Image is wider - fit to width
+            drawHeight = e.w / imgAspect;
+            offsetY = (e.h - drawHeight) / 2;
+          } else {
+            // Image is taller - fit to height
+            drawWidth = e.h * imgAspect;
+            offsetX = (e.w - drawWidth) / 2;
+          }
+
+          ctx.drawImage(
+            img,
+            e.x + offsetX,
+            e.y + offsetY,
+            drawWidth,
+            drawHeight
+          );
         } else {
           // Fallback to rectangle if images not loaded
           ctx.fillStyle = "#ff4d4f";
