@@ -33,6 +33,7 @@ type Enemy = {
   h: number;
   vx: number;
   shootTimer: number;
+  creatureType: number;
 };
 type Particle = { x: number; y: number; vx: number; vy: number; life: number };
 
@@ -90,6 +91,10 @@ export default function useGame(
     gameOver: false, // Internal game over flag for loop logic
     scaleFactor: scaleFactor, // Store scale factor in game state
   });
+
+  // Refs for creature images
+  const creatureImages = useRef<HTMLImageElement[]>([]);
+  const imagesLoaded = useRef(false);
 
   // Update scale factor when screen size changes
   useEffect(() => {
@@ -157,6 +162,37 @@ export default function useGame(
 
     console.log("🎬 useEffect running - initializing game");
 
+    // Load creature images
+
+    const loadImages = () => {
+      const imagePromises = [
+        "/creature1.png",
+        "/creature2.png",
+        "/creature3.png",
+        "/creature4.png",
+      ].map((src, index) => {
+        return new Promise<void>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            creatureImages.current[index] = img;
+            resolve();
+          };
+          img.onerror = () => {
+            console.warn(`Failed to load ${src}`);
+            resolve(); // Still resolve to not block other images
+          };
+          img.src = src;
+        });
+      });
+
+      Promise.all(imagePromises).then(() => {
+        imagesLoaded.current = true;
+        console.log("✅ All creature images loaded");
+      });
+    };
+
+    loadImages();
+
     // --- Resize function to match parent exactly ---
     function resize() {
       if (!ctx || !canvas) return;
@@ -201,6 +237,20 @@ export default function useGame(
       }
 
       const scale = gameStateRef.current.scaleFactor || 1;
+      const currentWave = statsRef.current.wave;
+
+      // Determine creature type based on wave number
+      let creatureType = 0;
+      if (currentWave >= 7) {
+        creatureType = 3; // Crystalline entity
+      } else if (currentWave >= 5) {
+        creatureType = 2; // Biomechanical horror
+      } else if (currentWave >= 3) {
+        creatureType = 1; // Insect-like
+      } else {
+        creatureType = 0; // Octopus-like
+      }
+
       for (let i = 0; i < n; i++) {
         gameStateRef.current.enemies.push({
           x: 40 + i * 70 * scale,
@@ -209,6 +259,7 @@ export default function useGame(
           h: 28 * scale,
           vx: (30 + Math.random() * 40) * (Math.random() < 0.5 ? 1 : -1),
           shootTimer: rand(1, 4) / difficultyMultiplier,
+          creatureType: creatureType,
         });
       }
     }
@@ -421,8 +472,17 @@ export default function useGame(
       ctx.fillStyle = "#ffea00";
       state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
-      ctx.fillStyle = "#ff4d4f";
-      state.enemies.forEach((e) => ctx.fillRect(e.x, e.y, e.w, e.h));
+      // Draw enemies with creature images
+      state.enemies.forEach((e) => {
+        if (imagesLoaded.current && creatureImages.current[e.creatureType]) {
+          const img = creatureImages.current[e.creatureType];
+          ctx.drawImage(img, e.x, e.y, e.w, e.h);
+        } else {
+          // Fallback to rectangle if images not loaded
+          ctx.fillStyle = "#ff4d4f";
+          ctx.fillRect(e.x, e.y, e.w, e.h);
+        }
+      });
 
       ctx.fillStyle = "#ff8c00";
       state.enemyBullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
