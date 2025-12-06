@@ -2,7 +2,7 @@
 
 const sounds: Record<string, HTMLAudioElement> = {};
 let isMuted = false;
-let fadeInterval: NodeJS.Timeout | null = null;
+
 let audioCtx: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let droneOscillators: OscillatorNode[] = [];
@@ -13,7 +13,8 @@ let isPlaying = false;
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext)();
     masterGain = audioCtx.createGain();
     masterGain.gain.value = 0.3;
     masterGain.connect(audioCtx.destination);
@@ -71,12 +72,12 @@ function startDrone() {
   });
 }
 
-function stopDrone() {
+function stopDrone(duration = 2000) {
   if (!isPlaying) return;
 
   const now = audioCtx?.currentTime || 0;
   droneGains.forEach((g) => {
-    g.gain.linearRampToValueAtTime(0, now + 2); // 2s fade out
+    g.gain.linearRampToValueAtTime(0, now + duration / 1000);
   });
 
   setTimeout(() => {
@@ -84,7 +85,7 @@ function stopDrone() {
     droneOscillators = [];
     droneGains = [];
     isPlaying = false;
-  }, 2000);
+  }, duration);
 }
 
 // 🔊 Play short SFX (shoot, explosion, etc.)
@@ -133,15 +134,22 @@ export function playMusic(name: string, volume = 0.4) {
 
 // 🕹️ Fade out current music smoothly
 export function fadeOutMusic(duration = 1000) {
-  stopDrone();
+  stopDrone(duration);
 }
 
 // 🔁 Resume / fade in music
 export function resumeMusic(targetVolume = 0.4, duration = 1000) {
   if (isMuted) return;
   initAudio();
-  if (masterGain)
-    masterGain.gain.setValueAtTime(targetVolume, audioCtx!.currentTime);
+  if (masterGain) {
+    const now = audioCtx!.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.linearRampToValueAtTime(
+      targetVolume,
+      now + duration / 1000
+    );
+  }
   startDrone();
 }
 
