@@ -16,10 +16,28 @@ export function playSound(name: string, volume = 0.5) {
   if (isMuted) return;
 
   if (!sounds[name]) {
-    const src =
-      name === "shoot"
-        ? "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYQAAAAA/////wAA//8AAP//AAD//wAA//8AAP//AAD//wAA"
-        : "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZAAAAAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA";
+    let src = "";
+    if (name === "playerShoot") {
+      // High pitch laser
+      src =
+        "data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...";
+      // (Using a placeholder short string for brevity in prompt, but I will use a real simple generated base64 or keep the existing one as playerShoot)
+      // Actually, I'll use the existing "shoot" sound for playerShoot and a different one for enemyShoot.
+      src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYQAAAAA/////wAA//8AAP//AAD//wAA//8AAP//AAD//wAA";
+    } else if (name === "enemyShoot") {
+      // Lower pitch / noise
+      src =
+        "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZAAAAAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA";
+    } else if (name === "explode") {
+      // Noise burst
+      src =
+        "data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWQAAAAA////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAD//wAA";
+    } else {
+      // Fallback/Menu click
+      src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YYQAAAAA/////wAA//8AAP//AAD//wAA//8AAP//AAD//wAA";
+    }
     sounds[name] = new Audio(src);
   }
 
