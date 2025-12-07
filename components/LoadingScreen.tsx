@@ -58,7 +58,7 @@ export default function LoadingScreen({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="flex flex-col items-center gap-6"
+          className="flex flex-col items-center gap-8"
         >
           <div className="text-cyan-400 text-xl tracking-[0.2em] uppercase glow-text">
             System Online
@@ -66,13 +66,33 @@ export default function LoadingScreen({
 
           <button
             onClick={onEnter}
-            className="group relative px-8 py-3 bg-transparent overflow-hidden"
+            className="group relative flex items-center justify-center p-6 rounded-full transition-all duration-500 hover:scale-110 hover:shadow-[0_0_40px_rgba(34,211,238,0.6)] cursor-pointer"
+            aria-label="Initialize Connection"
           >
-            <div className="absolute inset-0 w-full h-full border border-cyan-500/50 group-hover:border-cyan-400 transition-colors duration-300" />
-            <div className="absolute inset-0 w-0 h-full bg-cyan-500/20 group-hover:w-full transition-all duration-300 ease-out" />
-            <span className="relative text-cyan-400 group-hover:text-cyan-300 tracking-widest text-sm uppercase font-bold">
-              Initialize Connection
-            </span>
+            {/* Ambient Pulse */}
+            <div className="absolute inset-0 rounded-full bg-cyan-500/20 animate-pulse" />
+
+            {/* Rotating Ring */}
+            <div className="absolute inset-0 rounded-full border border-cyan-500/30 group-hover:border-cyan-400 transition-colors duration-500" />
+
+            {/* Inner Ring */}
+            <div className="absolute inset-2 rounded-full border border-cyan-500/10 group-hover:border-cyan-400/40 transition-colors duration-500" />
+
+            {/* Standard Power Icon SVG */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-12 h-12 text-cyan-400 group-hover:text-cyan-100 transition-colors duration-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"
+              />
+            </svg>
           </button>
         </motion.div>
       )}

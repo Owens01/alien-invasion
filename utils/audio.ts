@@ -168,7 +168,23 @@ export function playWelcomeMusic(volume = 0.5) {
           console.log("✅ Welcome music playing");
         })
         .catch((e) => {
-          console.warn("❌ Welcome music play failed:", e);
+          console.warn(
+            "⚠️ Autoplay blocked. Waiting for user interaction...",
+            e
+          );
+          // Retry on first interaction
+          const unlockAudio = () => {
+            if (welcomeMusic) {
+              welcomeMusic.play().then(() => {
+                console.log("✅ Audio unlocked and playing");
+              });
+            }
+            window.removeEventListener("click", unlockAudio);
+            window.removeEventListener("keydown", unlockAudio);
+          };
+
+          window.addEventListener("click", unlockAudio);
+          window.addEventListener("keydown", unlockAudio);
         });
     }
 
