@@ -262,14 +262,17 @@ export default function useGame(
     [gameOver, settings.muted, setSettings, setStats]
   );
 
-  const state = {
-    ...settings,
-    ...stats,
-    paused,
-    gameOver,
-    gameStarted,
-    isSmallScreen,
-  };
+  const state = useMemo(
+    () => ({
+      ...settings,
+      ...stats,
+      paused,
+      gameOver,
+      gameStarted,
+      isSmallScreen,
+    }),
+    [settings, stats, paused, gameOver, gameStarted, isSmallScreen]
+  );
 
   return {
     state,
