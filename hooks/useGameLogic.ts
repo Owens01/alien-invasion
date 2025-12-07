@@ -208,8 +208,10 @@ export function useGameLogic(
           h: bulletH,
           isBig: isBig,
         });
-        if (!currentSettings.muted)
-          playSound("enemyShoot", currentSettings.volume * 0.9);
+        if (!currentSettings.muted) {
+          const soundName = isBig ? "bigEnemyShoot" : "smallEnemyShoot";
+          playSound(soundName, currentSettings.volume * 0.9);
+        }
         e.shootTimer = rand(1, 3.5) / difficultyMultiplier;
       }
 
