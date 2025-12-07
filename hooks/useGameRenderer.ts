@@ -6,7 +6,8 @@ import { clamp } from "../utils/clamp";
 
 export function useGameRenderer(
   canvasRef: MutableRefObject<HTMLCanvasElement | null>,
-  gameStateRef: MutableRefObject<InternalGameState>
+  gameStateRef: MutableRefObject<InternalGameState>,
+  onLoaded?: () => void
 ) {
   const creatureImages = useRef<HTMLImageElement[]>([]);
   const playerShipImage = useRef<HTMLImageElement | null>(null);
@@ -74,6 +75,7 @@ export function useGameRenderer(
         () => {
           imagesLoaded.current = true;
           console.log("✅ All images loaded");
+          if (onLoaded) onLoaded();
         }
       );
     };

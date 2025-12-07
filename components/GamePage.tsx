@@ -9,6 +9,13 @@ import SettingsPanel from "./SettingsPanel";
 import HowToPlayPanel from "./HowToPlayPanel";
 import { GameState, GameActions } from "../types/game";
 
+import {
+  playWelcomeMusic,
+  fadeOutWelcomeMusic,
+  playMusic,
+} from "../utils/audio";
+import LoadingScreen from "./LoadingScreen";
+
 // Client-only canvas
 const GameCanvas = dynamic(() => import("./GameCanvas"), { ssr: false });
 
@@ -27,17 +34,32 @@ export default function GamePage() {
     setGameActions(actions);
   };
 
+  // Effect to play welcome music when loading finishes
+  React.useEffect(() => {
+    if (gameState && !gameState.isLoading && !hasStarted) {
+      playWelcomeMusic(0.5);
+    }
+  }, [gameState?.isLoading, hasStarted]);
+
   // Handle start game
   const handleStartGame = () => {
     setHasStarted(true);
+    fadeOutWelcomeMusic(1000);
+    setTimeout(() => {
+      // Start game music after fade out handled by toggleMusic or manual play
+      // Actually start game triggers gameStarted which triggers useGame logic
+    }, 1000);
     // Start the game loop using the actions from GameCanvas
     gameActions?.startGame();
   };
 
   return (
     <>
+      {/* Loading Screen */}
+      {(!gameState || gameState.isLoading) && <LoadingScreen />}
+
       {/* Welcome Screen - shown/hidden with absolute positioning */}
-      {!hasStarted && (
+      {gameState && !gameState.isLoading && !hasStarted && (
         <div className="fixed inset-0 z-50">
           <WelcomeScreen onStart={handleStartGame} />
         </div>

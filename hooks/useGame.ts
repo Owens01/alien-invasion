@@ -140,7 +140,14 @@ export default function useGame(
     setGameOver
   );
 
-  const { draw } = useGameRenderer(canvasRef, gameStateRef);
+  // Loading state for assets
+  const [isLoading, setIsLoading] = useState(true);
+
+  const handleImagesLoaded = () => {
+    setIsLoading(false);
+  };
+
+  const { draw } = useGameRenderer(canvasRef, gameStateRef, handleImagesLoaded);
 
   // References to stable update/draw functions for the loop
   const updateRef = useRef(update);
@@ -270,8 +277,9 @@ export default function useGame(
       gameOver,
       gameStarted,
       isSmallScreen,
+      isLoading,
     }),
-    [settings, stats, paused, gameOver, gameStarted, isSmallScreen]
+    [settings, stats, paused, gameOver, gameStarted, isSmallScreen, isLoading]
   );
 
   return {

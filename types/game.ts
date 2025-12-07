@@ -24,6 +24,7 @@ export type GameState = {
   paused: boolean;
   gameOver: boolean;
   gameStarted: boolean;
+  isLoading: boolean;
   highScores: number[];
   highScore: number;
 };

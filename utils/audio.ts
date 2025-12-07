@@ -5,8 +5,10 @@
 const sounds: Record<string, HTMLAudioElement> = {};
 let isMuted = false;
 let bgMusic: HTMLAudioElement | null = null;
+let welcomeMusic: HTMLAudioElement | null = null;
 let currentMusicVolume = 0.4;
 let fadeInterval: NodeJS.Timeout | null = null;
+let welcomeFadeInterval: NodeJS.Timeout | null = null;
 
 // Initialize Audio Context (still useful for some interactions, though we are switching to HTML5 Audio for files mainly)
 // We'll keep the structure simple: use HTML5 Audio for everything for simplicity with provided files.
@@ -15,6 +17,12 @@ export function initAudio() {
   if (!bgMusic) {
     bgMusic = new Audio("/sounds/Envato-background_music.mp3");
     bgMusic.loop = true;
+  }
+  if (!welcomeMusic) {
+    welcomeMusic = new Audio(
+      "/sounds/mixkit-space-alien-invasion-before-game.wav"
+    );
+    welcomeMusic.loop = true;
   }
 }
 
@@ -136,4 +144,45 @@ export function toggleMusic() {
 
 export function getMusicMuted() {
   return isMuted;
+}
+
+// 👽 Welcome Screen Music
+export function playWelcomeMusic(volume = 0.5) {
+  if (isMuted) return;
+  initAudio();
+
+  if (welcomeFadeInterval) clearInterval(welcomeFadeInterval);
+
+  if (welcomeMusic) {
+    welcomeMusic.volume = volume;
+    welcomeMusic.currentTime = 0;
+    welcomeMusic
+      .play()
+      .catch((e) => console.warn("Welcome music play failed:", e));
+  }
+}
+
+export function fadeOutWelcomeMusic(duration = 2000) {
+  if (!welcomeMusic || welcomeMusic.paused) return;
+
+  const startVolume = welcomeMusic.volume;
+  const steps = 20;
+  const stepTime = duration / steps;
+  let step = 0;
+
+  if (welcomeFadeInterval) clearInterval(welcomeFadeInterval);
+
+  welcomeFadeInterval = setInterval(() => {
+    step++;
+    const newVol = startVolume * (1 - step / steps);
+    if (welcomeMusic) welcomeMusic.volume = Math.max(0, newVol);
+
+    if (step >= steps) {
+      if (welcomeMusic) {
+        welcomeMusic.pause();
+        welcomeMusic.currentTime = 0;
+      }
+      if (welcomeFadeInterval) clearInterval(welcomeFadeInterval);
+    }
+  }, stepTime);
 }
