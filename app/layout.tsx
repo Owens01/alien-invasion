@@ -2,7 +2,7 @@ import "./globals.css";
 import React from "react";
 
 export const metadata = {
-  title: "Alien Invasion",
+  title: "Shooter",
   description: "2D Alien Invasion built with Next.js + TypeScript + Tailwind",
 };
 
