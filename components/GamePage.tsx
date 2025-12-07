@@ -94,6 +94,7 @@ export default function GamePage() {
                 actions={gameActions}
                 state={gameState}
               />
+              <p className="max-sm:text-center text-xs text-slate-500">Designed by OwenVisuals</p>
             </div>
           )}
         </div>

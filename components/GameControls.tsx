@@ -29,6 +29,8 @@ export default function GameControls({
         border border-slate-700
         max-w-80
         max-sm:m-auto
+        lg:m-1
+        lg:
       "
     >
 
