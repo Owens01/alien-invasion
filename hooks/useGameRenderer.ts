@@ -118,6 +118,22 @@ export function useGameRenderer(
 
     const state = gameStateRef.current;
     ctx.save();
+    // Draw background
+    if (imagesLoaded.current) {
+      // Fallback to type 0 if current type doesn't have a bg
+      const bgIndex = state.activeCreatureType % 4;
+      const bgImg = backgroundImages.current[bgIndex];
+
+      if (bgImg) {
+        // Draw background to cover the entire canvas
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+      } else {
+        // Dark fallback
+        ctx.fillStyle = "#0f172a"; // slate-900 like
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
     // Apply screen shake
     if (state.shake > 0) {
       const dx = (Math.random() - 0.5) * state.shake;
