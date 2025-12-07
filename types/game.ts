@@ -9,9 +9,8 @@ export type GameActions = {
   restart: () => void;
   toggleMute: () => void;
   getMuted: () => boolean;
-  toggleMusic: () => void;
-  getMusicMuted: () => boolean;
 };
+
 
 export type GameState = {
   volume: number;
@@ -28,3 +27,5 @@ export type GameState = {
   highScores: number[];
   highScore: number;
 };
+
+
