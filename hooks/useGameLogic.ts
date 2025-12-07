@@ -105,6 +105,25 @@ export function useGameLogic(
     // Check canvas existence
     if (!canvas) return;
 
+    if (state.gameOver) {
+      // Initialize game over timer if not set
+      if (state.gameOverTimer === undefined) {
+        state.gameOverTimer = 0;
+      }
+
+       state.gameOverTimer += dt;
+
+        // Stop shake after 3 seconds
+      if (state.gameOverTimer >= 3) {
+        state.shake = 0;
+      } else if (state.shake > 0) {
+        state.shake *= 0.9;
+        if (state.shake < 0.5) state.shake = 0;
+      }
+      
+      return;
+    }
+
     // Decay screen shake
     if (state.shake > 0) {
       state.shake *= 0.9;
@@ -116,6 +135,11 @@ export function useGameLogic(
       console.log("🎮 First update - spawning initial wave");
       spawnWave(6 * currentStats.wave);
       state.initialWaveSpawned = true;
+    }
+
+     // Stop update if game not started or paused
+    if (!state.gameStarted || state.paused) {
+      return;
     }
 
     // Difficulty scaling

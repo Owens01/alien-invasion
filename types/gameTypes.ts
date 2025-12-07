@@ -63,8 +63,13 @@ export type InternalGameState = {
   paused: boolean;
   gameStarted: boolean;
   gameOver: boolean;
+
+  // ⭐ Add this
+  gameOverTimer?: number;
+
   scaleFactor: number;
   lastShoot: boolean;
   shake: number;
   activeCreatureType: number;
 };
+
