@@ -97,10 +97,10 @@ export function useGameLogic(
     const currentStats = statsRef.current;
     const canvas = canvasRef.current;
 
-    // Stop update if game not started, paused, OR game over
-    if (!state.gameStarted || state.paused || state.gameOver) {
-      return;
-    }
+    // // Stop update if game not started, paused, OR game over
+    // if (!state.gameStarted || state.paused || state.gameOver) {
+    //   return;
+    // }
 
     // Check canvas existence
     if (!canvas) return;
