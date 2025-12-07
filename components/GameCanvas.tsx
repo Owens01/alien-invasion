@@ -115,7 +115,7 @@ export default function GameCanvas({
 
               <button
                 onClick={actions.restart}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold"
+                className="px-6 py-3 bg-slate-800 hover:bg-slate-600 rounded-lg font-bold"
               >
                 Restart
               </button>

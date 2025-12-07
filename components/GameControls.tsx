@@ -45,7 +45,7 @@ export default function GameControls({
             }
           `}
         >
-          {state.paused ? "RESUME" : "PAUSE"}
+          {state.paused ? "Resume" : "Pause"}
         </button>
 
         {/* HOW TO PLAY */}
@@ -54,8 +54,8 @@ export default function GameControls({
           className="
             w-full py-2 md:py-3 
             rounded-lg 
-            bg-purple-600 
-            hover:bg-purple-500 
+            bg-slate-600 
+            hover:bg-slate-900 
             text-white 
             font-bold 
             text-sm md:text-base
@@ -71,15 +71,15 @@ export default function GameControls({
           className="
             w-full py-2 md:py-3 
             rounded-lg 
-            bg-blue-600 
-            hover:bg-blue-500 
+            bg-slate-900 
+            hover:bg-slate-600 
             text-white 
             font-bold 
             text-sm md:text-base
             transition-colors
           "
         >
-          SETTINGS
+          Settings
         </button>
       </div>
     </div>
