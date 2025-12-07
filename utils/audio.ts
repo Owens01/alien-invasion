@@ -147,6 +147,7 @@ export function getMusicMuted() {
 }
 
 // 👽 Welcome Screen Music
+// 👽 Welcome Screen Music
 export function playWelcomeMusic(volume = 0.5) {
   if (isMuted) return;
   initAudio();
@@ -154,11 +155,26 @@ export function playWelcomeMusic(volume = 0.5) {
   if (welcomeFadeInterval) clearInterval(welcomeFadeInterval);
 
   if (welcomeMusic) {
+    welcomeMusic.loop = true; // Ensure loop is set
     welcomeMusic.volume = volume;
     welcomeMusic.currentTime = 0;
-    welcomeMusic
-      .play()
-      .catch((e) => console.warn("Welcome music play failed:", e));
+
+    console.log("🎵 Attempting to play welcome music...");
+    const playPromise = welcomeMusic.play();
+
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log("✅ Welcome music playing");
+        })
+        .catch((e) => {
+          console.warn("❌ Welcome music play failed:", e);
+        });
+    }
+
+    // Debugging helper
+    welcomeMusic.onended = () =>
+      console.log("⚠️ Welcome music ended (Should loop!)");
   }
 }
 

@@ -24,6 +24,7 @@ export default function GamePage() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [gameActions, setGameActions] = useState<GameActions | null>(null);
@@ -34,12 +35,12 @@ export default function GamePage() {
     setGameActions(actions);
   };
 
-  // Effect to play welcome music when loading finishes
+  // Effect to play welcome music when user enters
   React.useEffect(() => {
-    if (gameState && !gameState.isLoading && !hasStarted) {
+    if (hasEntered && !hasStarted) {
       playWelcomeMusic(0.5);
     }
-  }, [gameState?.isLoading, hasStarted]);
+  }, [hasEntered, hasStarted]);
 
   // Handle start game
   const handleStartGame = () => {
@@ -55,11 +56,16 @@ export default function GamePage() {
 
   return (
     <>
-      {/* Loading Screen */}
-      {(!gameState || gameState.isLoading) && <LoadingScreen />}
+      {/* Loading / Entry Screen */}
+      {!hasEntered && (
+        <LoadingScreen
+          isLoaded={gameState ? !gameState.isLoading : false}
+          onEnter={() => setHasEntered(true)}
+        />
+      )}
 
       {/* Welcome Screen - shown/hidden with absolute positioning */}
-      {gameState && !gameState.isLoading && !hasStarted && (
+      {hasEntered && !hasStarted && (
         <div className="fixed inset-0 z-50">
           <WelcomeScreen onStart={handleStartGame} />
         </div>

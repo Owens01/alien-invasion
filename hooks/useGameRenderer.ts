@@ -74,7 +74,7 @@ export function useGameRenderer(
       Promise.all([...creaturePromises, playerPromise, ...bgPromises]).then(
         () => {
           imagesLoaded.current = true;
-          console.log("✅ All images loaded");
+          console.log(" All images loaded");
           if (onLoaded) onLoaded();
         }
       );
