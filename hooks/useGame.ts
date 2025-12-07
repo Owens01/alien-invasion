@@ -4,19 +4,15 @@ import useInput from "./useInput";
 import usePersistentState from "./usePersistentState";
 import config from "../data/config";
 
+import { useState, useEffect, useRef, RefObject, useMemo } from "react";
+import { resumeMusic, fadeOutMusic, stopMusic } from "../utils/audio";
 import {
-  useState,
-  useEffect,
-  useRef,
-  RefObject,
-  useMemo,
-} from "react";
-import {
-  resumeMusic,
-  fadeOutMusic,
-  stopMusic,
-} from "../utils/audio";
-import { InternalGameState, Player, Bullet, Enemy, Particle } from "../types/gameTypes";
+  InternalGameState,
+  Player,
+  Bullet,
+  Enemy,
+  Particle,
+} from "../types/gameTypes";
 import { useGameLogic } from "./useGameLogic";
 import { useGameRenderer } from "./useGameRenderer";
 
@@ -167,10 +163,10 @@ export default function useGame(
     function loop(now = performance.now()) {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      
+
       updateRef.current(dt);
       drawRef.current();
-      
+
       rafRef.current = requestAnimationFrame(loop);
     }
 
@@ -266,13 +262,17 @@ export default function useGame(
     [gameOver, settings.muted, setSettings, setStats]
   );
 
-  return {
-    settings,
-    stats,
+  const state = {
+    ...settings,
+    ...stats,
     paused,
     gameOver,
     gameStarted,
     isSmallScreen,
-    ...actions,
+  };
+
+  return {
+    state,
+    actions,
   };
 }
