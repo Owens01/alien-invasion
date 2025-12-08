@@ -13,7 +13,7 @@ export default function LoadingScreen({
   onEnter,
 }: LoadingScreenProps) {
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center text-cyan-400 font-mono">
+    <div className="fixed h-screen inset-0 z-50 bg-black flex flex-col items-center justify-center text-cyan-400 font-mono">
       {!isLoaded ? (
         <>
           <motion.div
