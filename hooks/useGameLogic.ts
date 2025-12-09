@@ -97,11 +97,6 @@ export function useGameLogic(
     const currentStats = statsRef.current;
     const canvas = canvasRef.current;
 
-    // // Stop update if game not started, paused, OR game over
-    // if (!state.gameStarted || state.paused || state.gameOver) {
-    //   return;
-    // }
-
     // Check canvas existence
     if (!canvas) return;
 
@@ -132,7 +127,7 @@ export function useGameLogic(
 
     // Spawn initial wave when game starts
     if (!state.initialWaveSpawned) {
-      console.log("🎮 First update - spawning initial wave");
+      console.log(" First update - spawning initial wave");
       spawnWave(6 * currentStats.wave);
       state.initialWaveSpawned = true;
     }
