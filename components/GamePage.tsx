@@ -12,7 +12,6 @@ import { GameState, GameActions } from "../types/game";
 import {
   playWelcomeMusic,
   fadeOutWelcomeMusic,
-  playMusic,
 } from "../utils/audio";
 import LoadingScreen from "./LoadingScreen";
 
