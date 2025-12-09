@@ -367,18 +367,8 @@ export function useGameLogic(
     // Wave completion
     if (state.enemies.length === 0) {
       setStats((s) => ({ ...s, wave: s.wave + 1 }));
-      const newWave = statsRef.current.wave + 1; // Wait, statsRef might not be updated yet if setStats is async?
-      // Actually setStats updates React state, but statsRef is updated via useEffect in useGame.ts
-      // So statsRef.current.wave is the OLD wave still?
-      // In the original code:
-      /*
-        setStats((s) => ({ ...s, wave: s.wave + 1 }));
-        const newWave = statsRef.current.wave + 1;
-        spawnWave(6 + newWave);
-      */
-      // If statsRef is updated via useEffect, it won't be updated synchronously here.
-      // So statsRef.current.wave is indeed the old wave.
-      // And we use statsRef.current.wave + 1, so that's correct logic relative to the original.
+      const newWave = statsRef.current.wave + 1; 
+     
       spawnWave(6 + newWave);
     }
   }
