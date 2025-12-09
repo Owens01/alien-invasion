@@ -82,7 +82,7 @@ export default function useInput() {
       keys.current.down = deltaY > threshold;
 
       updateState();
-    }
+    } 
 
     function touchEnd(e: TouchEvent) {
       if (!touchState.current.isActive) return;

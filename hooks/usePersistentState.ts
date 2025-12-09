@@ -15,7 +15,7 @@ export default function usePersistentState<T>(key: string, initial: T) {
     try {
       localStorage.setItem(key, JSON.stringify(state));
     } catch {
-      // ignore storage errors (e.g. private mode or full quota)
+     
     }
   }, [key, state]);
 

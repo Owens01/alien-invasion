@@ -180,8 +180,8 @@ export function useGameRenderer(
     }
 
     // Draw player bullets in red
-ctx.fillStyle = "#ff0000";
-state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
+    ctx.fillStyle = "#ff0000";
+    state.bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
     // Draw enemies with creature images
     state.enemies.forEach((e) => {
