@@ -22,7 +22,7 @@ export function useGameLogic(
   }
 
   function spawnWave(n = 6) {
-    console.log("🚀 SPAWNING WAVE with", n, "enemies");
+    console.log(" SPAWNING WAVE with", n, "enemies");
     // Get difficulty from ref
     const currentSettings = settingsRef.current;
     let difficultyMultiplier = 1;
