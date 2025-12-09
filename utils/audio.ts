@@ -1,7 +1,5 @@
 // utils/audio.ts
 
-// utils/audio.ts
-
 const sounds: Record<string, HTMLAudioElement> = {};
 let isMuted = false;
 let bgMusic: HTMLAudioElement | null = null;
