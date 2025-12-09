@@ -24,7 +24,7 @@ export function initAudio() {
   }
 }
 
-// 🔊 Play short SFX (shoot, explosion, etc.)
+// Play short SFX (shoot, explosion, etc.)
 export function playSound(name: string, volume = 0.5) {
   if (isMuted) return;
 
@@ -56,7 +56,7 @@ export function playSound(name: string, volume = 0.5) {
   snd.play().catch(() => {});
 }
 
-// 🎶 Main music controller
+//  Main music controller
 export function playMusic(name: string, volume = 0.4) {
   if (isMuted) return;
   initAudio();
@@ -68,7 +68,7 @@ export function playMusic(name: string, volume = 0.4) {
   }
 }
 
-// 🕹️ Fade out current music smoothly
+// Fade out current music smoothly
 export function fadeOutMusic(duration = 1000) {
   if (!bgMusic || bgMusic.paused) return;
 
