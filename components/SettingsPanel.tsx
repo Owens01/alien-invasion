@@ -12,7 +12,7 @@ export default function SettingsPanel({
       <div className="bg-slate-800 p-6 rounded-2xl shadow-2xl w-[320px] text-white border border-slate-700">
         <h3 className="text-xl font-bold mb-4 text-center">Settings</h3>
 
-        {/* --- Game Controls --- */}
+       
         <div className="space-y-3">
           <label className="flex items-center justify-between">
             <span className="text-sm">Volume</span>
@@ -50,8 +50,6 @@ export default function SettingsPanel({
             />
           </label>
 
-          {/* Note: Mute toggles are also here for completeness, 
-              even though you will have main buttons for them on the right panel. */}
           <label className="flex items-center justify-between cursor-pointer">
             <span className="text-sm">Mute Music</span>
             <input
@@ -69,13 +67,10 @@ export default function SettingsPanel({
           </div>
         </div>
 
-        {/* --- Action Buttons --- */}
         <div className="flex justify-between gap-3 mt-6">
           <button
             onClick={() => {
               actions.resetSettings();
-              // Optional: Keep panel open or close it on reset?
-              // Usually reset doesn't close, but adhering to existing logic:
               onClose();
             }}
             className="px-4 py-2 rounded bg-red-600/80 hover:bg-red-600 text-sm transition-colors"

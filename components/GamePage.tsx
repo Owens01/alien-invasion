@@ -47,7 +47,6 @@ export default function GamePage() {
     fadeOutWelcomeMusic(1000);
     setTimeout(() => {
       // Start game music after fade out handled by toggleMusic or manual play
-      // Actually start game triggers gameStarted which triggers useGame logic
     }, 1000);
     // Start the game loop using the actions from GameCanvas
     gameActions?.startGame();
