@@ -163,7 +163,6 @@ export default function useGame(
 
   useEffect(() => {
     // Only start loop if canvas is ready?
-    // Actually the original code just started RequestAnimationFrame loop immediately.
 
     let last = performance.now();
 
@@ -190,12 +189,13 @@ export default function useGame(
     window.addEventListener("keydown", onKey);
 
     return () => {
-      console.log("🛑 Cleaning up game loop");
+      console.log(" Cleaning up game loop");
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       window.removeEventListener("keydown", onKey);
       stopMusic();
     };
-  }, []); // Run once on mount
+    // Run once on mount
+  }, []); 
 
   const actions = useMemo(
     () => ({
@@ -217,11 +217,11 @@ export default function useGame(
         }
       },
       startGame: () => {
-        console.log("🎮 START GAME CALLED");
+        console.log(" START GAME CALLED");
         setGameStarted(true);
       },
       restart: () => {
-        console.log("🔄 RESTART GAME");
+        console.log("RESTART GAME");
 
         // 1. Reset persisted stats
         setStats((s) => ({
