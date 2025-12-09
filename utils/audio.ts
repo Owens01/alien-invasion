@@ -87,14 +87,14 @@ export function fadeOutMusic(duration = 1000) {
     if (step >= steps) {
       if (bgMusic) {
         bgMusic.pause();
-        bgMusic.currentTime = 0; // Optional: reset to start
+        bgMusic.currentTime = 0;
       }
       if (fadeInterval) clearInterval(fadeInterval);
     }
   }, stepTime);
 }
 
-// 🔁 Resume / fade in music
+// Resume / fade in music
 export function resumeMusic(targetVolume = 0.4, duration = 1000) {
   if (isMuted) return;
   initAudio();
@@ -121,7 +121,7 @@ export function resumeMusic(targetVolume = 0.4, duration = 1000) {
   }
 }
 
-// ⏹️ Stop music entirely
+// Stop music entirely
 export function stopMusic() {
   if (fadeInterval) clearInterval(fadeInterval);
   if (bgMusic) {
@@ -130,7 +130,7 @@ export function stopMusic() {
   }
 }
 
-// 🔇 Toggle mute / unmute
+// Toggle mute / unmute
 export function toggleMusic() {
   isMuted = !isMuted;
   if (isMuted) {
@@ -144,8 +144,8 @@ export function getMusicMuted() {
   return isMuted;
 }
 
-// 👽 Welcome Screen Music
-// 👽 Welcome Screen Music
+
+// Welcome Screen Music
 export function playWelcomeMusic(volume = 0.5) {
   if (isMuted) return;
   initAudio();
@@ -157,24 +157,24 @@ export function playWelcomeMusic(volume = 0.5) {
     welcomeMusic.volume = volume;
     welcomeMusic.currentTime = 0;
 
-    console.log("🎵 Attempting to play welcome music...");
+    console.log(" Attempting to play welcome music...");
     const playPromise = welcomeMusic.play();
 
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
-          console.log("✅ Welcome music playing");
+          console.log(" Welcome music playing");
         })
         .catch((e) => {
           console.warn(
-            "⚠️ Autoplay blocked. Waiting for user interaction...",
+            " Autoplay blocked. Waiting for user interaction...",
             e
           );
           // Retry on first interaction
           const unlockAudio = () => {
             if (welcomeMusic) {
               welcomeMusic.play().then(() => {
-                console.log("✅ Audio unlocked and playing");
+                console.log(" Audio unlocked and playing");
               });
             }
             window.removeEventListener("click", unlockAudio);
@@ -188,7 +188,7 @@ export function playWelcomeMusic(volume = 0.5) {
 
     // Debugging helper
     welcomeMusic.onended = () =>
-      console.log("⚠️ Welcome music ended (Should loop!)");
+      console.log(" Welcome music ended (Should loop!)");
   }
 }
 
